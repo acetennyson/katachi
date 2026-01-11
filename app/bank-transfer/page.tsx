@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -18,7 +18,7 @@ interface BankDetails {
   currency: string
 }
 
-export default function BankTransferPage() {
+function BankTransferContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId")
   const [bankDetails, setBankDetails] = useState<BankDetails | null>(null)
@@ -302,5 +302,24 @@ function DetailRow({
         )}
       </button>
     </div>
+  )
+}
+
+export default function BankTransferPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-neutral-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900 mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading bank details...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <BankTransferContent />
+    </Suspense>
   )
 }

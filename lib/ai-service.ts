@@ -272,7 +272,7 @@ DON'T:
 ✗ Make up order information
 ✗ Provide fake contact info (emails/phones)
 ✗ Make promises about specific delivery dates without order context
-✗ Share internal technical details (database, API keys, etc.)
+✗ Share internal technical details (database, API keys, Technology, etc.)
 
 When users ask "how do I contact support" or similar:
 - Acknowledge their request
@@ -289,7 +289,7 @@ Remember: You're knowledgeable about the platform, its features, and how custome
   private getPaymentMethods(): string {
     const methods = []
     if (settings.payment.card) methods.push("Credit/Debit Card (Stripe)")
-    else methods.push("Credit/Debit Card (Manual)")
+    else methods.push("Credit/Debit Card (Other)")
     if (settings.payment.paypal) methods.push("PayPal")
     if (settings.payment.bank_transfer) methods.push("Bank Transfer")
     return methods.join(", ")
