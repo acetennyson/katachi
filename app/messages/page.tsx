@@ -1,18 +1,48 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { motion } from "framer-motion"
 import { Reveal } from "@/components/reveal"
 import { Button } from "@/components/ui/button"
-import { Send, Plus } from "lucide-react"
+import { Send, Plus, Bot, ArrowRight } from "lucide-react"
+
+interface Message {
+  id: string
+  sender: string
+  text: string
+  timestamp: string
+  isUser: boolean
+  source?: string
+}
 
 export default function MessagesPage() {
-  const [selectedThread, setSelectedThread] = useState<string | null>("1")
+  const router = useRouter()
   const [messageText, setMessageText] = useState("")
+  const [aiMessages, setAiMessages] = useState<Message[]>([
+    {
+      id: "ai-welcome",
+      sender: "AI Assistant",
+      text: "Hi! I'm your AI assistant. How can I help you today?",
+      timestamp: new Date().toLocaleString(),
+      isUser: false,
+    },
+  ])
+  const [isAiLoading, setIsAiLoading] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const threads = [
+    {
+      id: "ai",
+      subject: "AI Assistant",
+      lastMessage: "Ask me anything!",
+      date: "Always available",
+      unread: 0,
+      status: "active" as const,
+      isAI: true,
+    },
     {
       id: "1",
       subject: "Order ORD-001 Question",
@@ -20,6 +50,7 @@ export default function MessagesPage() {
       date: "2024-01-20",
       unread: 0,
       status: "open" as const,
+      isAI: false,
     },
     {
       id: "2",
@@ -28,10 +59,11 @@ export default function MessagesPage() {
       date: "2024-01-19",
       unread: 1,
       status: "pending" as const,
+      isAI: false,
     },
   ]
 
-  const messages = [
+  const regularMessages = [
     {
       id: "1",
       sender: "Support Team",
@@ -55,10 +87,64 @@ export default function MessagesPage() {
     },
   ]
 
-  const handleSend = () => {
-    if (messageText.trim()) {
-      console.log("Message sent:", messageText)
-      setMessageText("")
+  // Auto-scroll to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [aiMessages])
+
+  const handleSendToAI = async () => {
+    if (!messageText.trim() || isAiLoading) return
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      sender: "You",
+      text: messageText.trim(),
+      timestamp: new Date().toLocaleString(),
+      isUser: true,
+    }
+
+    setAiMessages((prev) => [...prev, userMessage])
+    setMessageText("")
+    setIsAiLoading(true)
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage.text,
+          conversationHistory: aiMessages.slice(1),
+        }),
+      })
+
+      const data = await response.json()
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: "AI Assistant",
+        text: data.response,
+        timestamp: new Date().toLocaleString(),
+        isUser: false,
+        source: data.source,
+      }
+
+      setAiMessages((prev) => [...prev, assistantMessage])
+    } catch (error) {
+      console.error("AI Chat Error:", error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: "AI Assistant",
+        text: "I'm having trouble connecting right now. Please try again or contact support@katachi.com",
+        timestamp: new Date().toLocaleString(),
+        isUser: false,
+      }
+      setAiMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsAiLoading(false)
     }
   }
 
@@ -68,122 +154,48 @@ export default function MessagesPage() {
       <div className="pt-32 pb-20">
         <div className="container-custom">
           <Reveal>
-            <div className="flex justify-between items-center mb-12">
-              <h1 className="text-5xl md:text-6xl font-bold text-neutral-900">Messages</h1>
-              <Button className="bg-neutral-900 text-white hover:bg-neutral-800 flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                New Message
-              </Button>
+            <div className="mb-12">
+              <h1 className="text-5xl md:text-6xl font-bold text-neutral-900 mb-4">Messages</h1>
+              <p className="text-neutral-600">Select a conversation to continue</p>
             </div>
           </Reveal>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Thread List */}
-            <Reveal delay={0.1}>
-              <motion.div className="lg:col-span-1">
-                <div className="space-y-2">
-                  {threads.map((thread) => (
-                    <button
-                      key={thread.id}
-                      onClick={() => setSelectedThread(thread.id)}
-                      className={`w-full text-left p-4 rounded-lg border transition-all ${
-                        selectedThread === thread.id
-                          ? "bg-neutral-900 text-white border-neutral-900"
-                          : "border-neutral-200 hover:border-neutral-300 bg-white"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold">{thread.subject}</h3>
-                        {thread.unread > 0 && (
-                          <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {thread.unread}
-                          </span>
-                        )}
-                      </div>
-                      <p
-                        className={`text-sm truncate ${selectedThread === thread.id ? "text-white/80" : "text-neutral-600"}`}
-                      >
-                        {thread.lastMessage}
-                      </p>
-                      <p
-                        className={`text-xs mt-2 ${selectedThread === thread.id ? "text-white/60" : "text-neutral-500"}`}
-                      >
-                        {thread.date}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            </Reveal>
-
-            {/* Chat Area */}
-            <Reveal delay={0.2}>
-              <motion.div className="lg:col-span-2 border border-neutral-200 rounded-lg flex flex-col bg-white overflow-hidden">
-                {selectedThread ? (
-                  <>
-                    {/* Chat Header */}
-                    <div className="p-6 border-b border-neutral-200">
-                      <h2 className="text-xl font-bold text-neutral-900">
-                        {threads.find((t) => t.id === selectedThread)?.subject}
-                      </h2>
-                      <p className="text-sm text-neutral-600 mt-1">
-                        Status:{" "}
-                        <span className="font-semibold capitalize">
-                          {threads.find((t) => t.id === selectedThread)?.status}
-                        </span>
-                      </p>
-                    </div>
-
-                    {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                      {messages.map((message) => (
-                        <motion.div
-                          key={message.id}
-                          className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <div
-                            className={`max-w-xs px-4 py-2 rounded-lg ${
-                              message.isUser ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-900"
-                            }`}
-                          >
-                            <p className="font-semibold text-sm mb-1">{message.sender}</p>
-                            <p className="text-sm">{message.text}</p>
-                            <p className={`text-xs mt-1 ${message.isUser ? "text-white/60" : "text-neutral-600"}`}>
-                              {message.timestamp}
-                            </p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-
-                    {/* Message Input */}
-                    <div className="p-6 border-t border-neutral-200">
-                      <div className="flex gap-3">
-                        <input
-                          type="text"
-                          value={messageText}
-                          onChange={(e) => setMessageText(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && handleSend()}
-                          placeholder="Type your message..."
-                          className="flex-1 px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-900"
-                        />
-                        <Button onClick={handleSend} className="bg-neutral-900 text-white hover:bg-neutral-800 px-6">
-                          <Send className="w-4 h-4" />
-                        </Button>
+          <Reveal delay={0.1}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {threads.map((thread) => (
+                <motion.button
+                  key={thread.id}
+                  onClick={() => router.push(`/messages/${thread.id}`)}
+                  className="bg-white rounded-lg p-6 border border-neutral-200 hover:border-neutral-900 hover:shadow-lg transition-all text-left"
+                  whileHover={{ y: -4 }}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      {thread.isAI && (
+                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                          <Bot className="w-5 h-5 text-purple-600" />
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-semibold text-neutral-900">{thread.subject}</h3>
+                        <p className="text-xs text-neutral-500">{thread.date}</p>
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center h-96 text-neutral-600">
-                    <p>Select a conversation to start messaging</p>
+                    {thread.unread > 0 && (
+                      <span className="bg-blue-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                        {thread.unread}
+                      </span>
+                    )}
                   </div>
-                )}
-              </motion.div>
-            </Reveal>
-          </div>
+                  <p className="text-sm text-neutral-600 line-clamp-2 mb-4">{thread.lastMessage}</p>
+                  <div className="flex items-center text-neutral-900 text-sm font-medium">
+                    Open conversation
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </Reveal>
         </div>
       </div>
       <Footer />

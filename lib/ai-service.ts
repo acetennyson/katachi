@@ -39,16 +39,16 @@ class AIService {
 
   constructor() {
     // Use Ollama for development, Hugging Face for production
-    this.useOllama = process.env.NODE_ENV === "development" || process.env.USE_OLLAMA === "true"
+    this.useOllama = false // process.env.NODE_ENV === "development" || process.env.USE_OLLAMA === "true"
     
     if (this.useOllama) {
       // Ollama (local)
       this.apiUrl = process.env.OLLAMA_API_URL || "http://localhost:11434"
       this.model = process.env.OLLAMA_MODEL || "llama3.2" // Fast, good quality
     } else {
-      // Hugging Face Inference API
-      this.apiUrl = "https://api-inference.huggingface.co/models"
-      this.model = process.env.HF_MODEL || "mistralai/Mistral-7B-Instruct-v0.2"
+      // Hugging Face Router (OpenAI-compatible)
+      this.apiUrl = "https://router.huggingface.co/v1"
+      this.model = process.env.HF_MODEL || "meta-llama/Llama-3.2-3B-Instruct"
     }
   }
 
@@ -93,7 +93,7 @@ class AIService {
   }
 
   /**
-   * Chat with Hugging Face (production)
+   * Chat with Hugging Face Router (OpenAI-compatible format)
    */
   private async chatWithHuggingFace(messages: ChatMessage[]): Promise<string> {
     const apiKey = process.env.HUGGINGFACE_API_KEY
@@ -102,39 +102,31 @@ class AIService {
       throw new Error("HUGGINGFACE_API_KEY not set")
     }
 
-    // Format messages into a single prompt
-    const prompt = this.formatMessagesForHF(messages)
-
-    const response = await fetch(`${this.apiUrl}/${this.model}`, {
+    const response = await fetch(`${this.apiUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 500,
-          temperature: 0.7,
-          top_p: 0.95,
-          return_full_text: false,
-        },
+        model: this.model,
+        messages: messages,
+        max_tokens: 500,
+        temperature: 0.7,
+        top_p: 0.95,
       }),
     })
 
     if (!response.ok) {
-      throw new Error(`Hugging Face API error: ${response.statusText}`)
+      const errorText = await response.text()
+      throw new Error(`Hugging Face API error: ${response.statusText} - ${errorText}`)
     }
 
     const data = await response.json()
     
-    // Handle different response formats
-    if (Array.isArray(data) && data[0]?.generated_text) {
-      return data[0].generated_text
-    } else if (data.generated_text) {
-      return data.generated_text
-    } else if (typeof data === "string") {
-      return data
+    // OpenAI-compatible response format
+    if (data.choices && data.choices[0]?.message?.content) {
+      return data.choices[0].message.content
     }
     
     throw new Error("Unexpected response format from Hugging Face")
@@ -166,20 +158,129 @@ class AIService {
 Your role:
 - Answer questions about products, orders, shipping, and returns
 - Be friendly, professional, and concise
-- If you don't know something, admit it and suggest contacting human support
+- Provide specific, actionable information
 - Keep responses under 100 words unless more detail is needed
 
-Store Information:
-- Store Name: Katachi Furniture
-- Products: Modern furniture (sofas, chairs, tables, shelving)
-- Shipping: Available worldwide, times vary by location
-- Returns: 30-day return policy on most items
-- Payment Methods: ${this.getPaymentMethods()}
+=== STORE INFORMATION ===
 
-Important:
-- Never make up product details or prices
-- Always verify order information before providing details
-- Escalate complex issues to human support`
+Store Name: Katachi Online Store
+Website: katachi.com (or the domain where this is deployed)
+Type: Modern furniture e-commerce store
+
+Product Categories:
+- Sofas & Loveseats (modern, minimalist designs)
+- Chairs & Armchairs (lounge chairs, dining chairs)
+- Tables (dining tables, coffee tables)
+- Shelving & Storage (modular shelving units)
+
+All products feature:
+- Contemporary minimalist design
+- High-quality materials (oak, walnut, bouclé, velvet)
+- Detailed product pages with images, descriptions, and specifications
+- Real-time inventory status
+
+=== PLATFORM FEATURES ===
+
+Technology Stack:
+- Built with Next.js (React framework)
+- PostgreSQL database via Supabase
+- Modern, responsive design
+- Real-time inventory management
+
+Shopping Features:
+- Browse products by category
+- Product search and filtering
+- Shopping cart functionality
+- Guest checkout or account creation
+- Order tracking
+- Save multiple shipping addresses
+- Save payment methods for faster checkout
+
+Account Features:
+- Create account with email/password
+- View order history
+- Track current orders
+- Manage shipping addresses
+- View saved payment cards
+- Update account information
+
+=== PAYMENT & SHIPPING ===
+
+Payment Methods: ${this.getPaymentMethods()}
+- Secure payment processing via Stripe
+- Save payment methods for future purchases
+- Bank transfer option available
+- PayPal integration (if enabled)
+
+Shipping:
+- Multiple shipping methods available
+- Worldwide shipping (times vary by location)
+- Shipping costs calculated at checkout
+- Order tracking provided after shipment
+- Estimated delivery times shown during checkout
+
+Tax & Pricing:
+- Prices shown in USD (or configured currency)
+- Sales tax calculated based on shipping address
+- Final total shown before payment
+
+=== POLICIES ===
+
+Returns & Refunds:
+- 30-day return policy on most items
+- Items must be in original condition
+- Contact support to initiate a return
+- Refund processed after item is received and inspected
+
+Order Issues:
+- Contact support for order modifications
+- Cancel orders before shipment
+- Track orders in your account dashboard
+
+Privacy & Security:
+- Secure payment processing
+- Data stored securely
+- Privacy policy available on website
+
+=== CONTACT & SUPPORT ===
+
+For additional help, customers can:
+1. Use this AI chat assistant (that's you!)
+2. Check their account dashboard for order status
+3. Browse the product catalog at /catalog
+4. View their cart at /cart
+5. Manage their profile at /profile
+
+For complex issues beyond your knowledge:
+- Suggest checking their account dashboard
+- Recommend browsing the help section
+- For urgent matters, acknowledge you'll escalate to human support
+
+Technical questions about orders, payments, or account issues should be directed to human support.
+
+=== YOUR GUIDELINES ===
+
+DO:
+✓ Provide clear, direct answers
+✓ Guide users to relevant pages (cart, catalog, profile, checkout)
+✓ Explain features and how to use them
+✓ Be friendly and professional
+✓ Admit when you don't know something
+
+DON'T:
+✗ Make up product prices or details
+✗ Make up order information
+✗ Provide fake contact info (emails/phones)
+✗ Make promises about specific delivery dates without order context
+✗ Share internal technical details (database, API keys, etc.)
+
+When users ask "how do I contact support" or similar:
+- Acknowledge their request
+- Let them know you're here to help via this chat
+- For account-specific issues, guide them to their account dashboard
+- For complex issues, confirm you'll make sure a human team member can review their request
+
+Remember: You're knowledgeable about the platform, its features, and how customers can use it. Be helpful and specific!`
   }
 
   /**

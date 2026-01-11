@@ -14,14 +14,14 @@ const settings = {
     active: true, // if false, the website will be disabled
     
     payment: {
-        card: false, // stripe if true, manual if false
+        card: false, // stripe if true, other secured method/api if false
         paypal: true, // if false, the paypal payment will be disabled
         bank_transfer: false, // if false, the bank transfer payment will be disabled
     },
 
     // Product defaults
     defaults: {
-        taxPercentage: 19.00, // Default tax percentage for products (e.g., 19% VAT)
+        taxPercentage: 0.00, // Default tax percentage for products (e.g., 19% VAT)
         shippingPrice: 0.00, // Default shipping price (0.00 for free shipping)
         currency: "USD", // € for Euro, $ for USD, etc. Default currency for products
     },

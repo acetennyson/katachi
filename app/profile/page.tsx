@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
 import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
 import { motion } from "framer-motion"
 import { Reveal } from "@/components/reveal"
 import { User, Package, MapPin, Zap, ChevronRight, TrendingUp, Heart, CreditCard } from "lucide-react"
@@ -230,7 +229,6 @@ export default function ProfilePage() {
           </Reveal>
         </div>
       </div>
-      <Footer />
     </main>
   )
 }

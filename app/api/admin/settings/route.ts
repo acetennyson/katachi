@@ -37,6 +37,10 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       settings: mergedSettings,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      }
     })
   } catch (error: any) {
     console.error("[Admin Settings API] Error:", error)

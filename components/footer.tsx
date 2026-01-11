@@ -18,15 +18,14 @@ export function Footer() {
       { name: "Sign In", href: "/auth/signin" },
       { name: "Profile", href: "/profile" },
       { name: "Orders", href: "/profile" },
-      { name: "Messages", href: "/messages" },
       { name: "Admin", href: "/admin" },
     ],
     Support: [
+      { name: "Messages", href: "/messages" },
       { name: "Contact", href: "#" },
       { name: "Shipping", href: "#" },
       { name: "Returns", href: "#" },
       { name: "Care Instructions", href: "#" },
-      { name: "Size Guide", href: "#" },
     ],
   }
 

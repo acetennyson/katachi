@@ -746,7 +746,39 @@ INSERT INTO site_settings (key, value, description) VALUES
   ('default_shipping_price', '0.00'::jsonb, 'Default shipping price'),
   ('currency', '"USD"'::jsonb, 'Default currency'),
   ('currency_locale', '"en-US"'::jsonb, 'Currency formatting locale'),
-  ('currency_symbol', '"$"'::jsonb, 'Currency symbol')
+  ('currency_symbol', '"$"'::jsonb, 'Currency symbol'),
+
+  -- Atlassian (Jira + Confluence) Support Integration
+  ('atlassian_support_enabled', 'false'::jsonb, 'Enable Atlassian-based context for the AI support bot'),
+  ('atlassian_site_url', '""'::jsonb, 'Atlassian site URL, e.g. https://your-domain.atlassian.net'),
+  ('atlassian_email', '""'::jsonb, 'Atlassian account email used for API token auth'),
+  ('atlassian_api_token', '""'::jsonb, 'Atlassian API token (store securely; rotate anytime)'),
+  ('atlassian_confluence_space_keys', '[]'::jsonb, 'Optional Confluence space keys to limit search (empty = all)'),
+  ('atlassian_jira_project_keys', '[]'::jsonb, 'Optional Jira project keys to limit search (empty = all)'),
+
+  -- AI Provider Router (fallback order)
+  ('ai_provider_order', '["huggingface","groq","gemini","together","openai"]'::jsonb, 'Ordered list of AI providers to try (fallback chain)'),
+  ('ai_provider_enabled', '{"huggingface":true,"groq":false,"gemini":false,"together":false,"openai":false}'::jsonb, 'Enable/disable providers'),
+
+  -- Hugging Face Router
+  ('huggingface_api_key', '""'::jsonb, 'Hugging Face API key (router.huggingface.co)'),
+  ('huggingface_model', '"meta-llama/Llama-3.2-3B-Instruct"'::jsonb, 'Hugging Face model name'),
+
+  -- Groq
+  ('groq_api_key', '""'::jsonb, 'Groq API key'),
+  ('groq_model', '"llama-3.1-8b-instant"'::jsonb, 'Groq model name'),
+
+  -- Gemini
+  ('gemini_api_key', '""'::jsonb, 'Google Gemini API key'),
+  ('gemini_model', '"gemini-1.5-flash"'::jsonb, 'Gemini model name'),
+
+  -- Together
+  ('together_api_key', '""'::jsonb, 'Together API key'),
+  ('together_model', '"meta-llama/Llama-3.1-8B-Instruct-Turbo"'::jsonb, 'Together model name'),
+
+  -- OpenAI
+  ('openai_api_key', '""'::jsonb, 'OpenAI API key'),
+  ('openai_model', '"gpt-4o-mini"'::jsonb, 'OpenAI model name')
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
@@ -1056,14 +1088,40 @@ CREATE TABLE IF NOT EXISTS chat_logs (
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
   source TEXT, -- 'knowledge_base', 'ai', or 'fallback'
+  provider TEXT, -- 'huggingface', 'groq', 'gemini', 'together', 'openai'
+  model TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Ensure new columns exist if table was created previously
+ALTER TABLE chat_logs ADD COLUMN IF NOT EXISTS provider TEXT;
+ALTER TABLE chat_logs ADD COLUMN IF NOT EXISTS model TEXT;
 
 -- Indexes for chat tables
 CREATE INDEX IF NOT EXISTS idx_chat_kb_question ON chat_knowledge_base(question);
 CREATE INDEX IF NOT EXISTS idx_chat_kb_use_count ON chat_knowledge_base(use_count DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_logs_created_at ON chat_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_chat_logs_source ON chat_logs(source);
+CREATE INDEX IF NOT EXISTS idx_chat_logs_provider ON chat_logs(provider);
+
+-- Function to get chat statistics
+CREATE OR REPLACE FUNCTION get_chat_stats()
+RETURNS TABLE (
+  total BIGINT,
+  knowledge_base BIGINT,
+  ai BIGINT,
+  fallback BIGINT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE source = 'knowledge_base') as knowledge_base,
+    COUNT(*) FILTER (WHERE source = 'ai') as ai,
+    COUNT(*) FILTER (WHERE source = 'fallback') as fallback
+  FROM chat_logs;
+END;
+$$ LANGUAGE plpgsql;
 
 -- ============================================================
 -- 14. VERIFICATION & COMPLETION

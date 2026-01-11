@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { AdminLayout } from "@/components/admin/admin-layout"
 import { motion } from "framer-motion"
-import { Package, ShoppingCart, Users, BarChart3, TrendingUp, Eye, Activity } from "lucide-react"
+import { Package, ShoppingCart, Users, BarChart3, TrendingUp, Eye, Activity, MessageSquare, Brain, Settings } from "lucide-react"
 import Link from "next/link"
 import { DashboardStats } from "./dashboard-stats"
 import { RevenueChart } from "./revenue-chart"
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Link href="/admin/analytics">
               <motion.div
                 className="p-6 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all cursor-pointer"
@@ -234,6 +234,51 @@ export default function AdminDashboard() {
                   <h3 className="text-lg font-bold text-neutral-900">Support</h3>
                 </div>
                 <p className="text-sm text-neutral-600">Customer messages</p>
+              </motion.div>
+            </Link>
+
+            <Link href="/admin/knowledge-base">
+              <motion.div
+                className="p-6 bg-white border border-neutral-200 rounded-lg hover:shadow-lg transition-all cursor-pointer"
+                whileHover={{ y: -4 }}
+              >
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="p-3 bg-purple-50 rounded-lg">
+                    <Brain className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-neutral-900">AI Knowledge Base</h3>
+                </div>
+                <p className="text-sm text-neutral-600">Manage chatbot Q&A</p>
+              </motion.div>
+            </Link>
+
+            <Link href="/admin/chat-logs">
+              <motion.div
+                className="p-6 bg-white border border-neutral-200 rounded-lg hover:shadow-lg transition-all cursor-pointer"
+                whileHover={{ y: -4 }}
+              >
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="p-3 bg-indigo-50 rounded-lg">
+                    <MessageSquare className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-neutral-900">Chat Logs</h3>
+                </div>
+                <p className="text-sm text-neutral-600">View AI conversations</p>
+              </motion.div>
+            </Link>
+
+            <Link href="/admin/settings">
+              <motion.div
+                className="p-6 bg-white border border-neutral-200 rounded-lg hover:shadow-lg transition-all cursor-pointer"
+                whileHover={{ y: -4 }}
+              >
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="p-3 bg-orange-50 rounded-lg">
+                    <Settings className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-neutral-900">Settings</h3>
+                </div>
+                <p className="text-sm text-neutral-600">Configure site settings</p>
               </motion.div>
             </Link>
           </div>
