@@ -29,15 +29,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user")
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch (e) {
-        console.error("Failed to load user:", e)
+    const initAuth = async () => {
+      // First check localStorage
+      const storedUser = localStorage.getItem("user")
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser))
+          setIsLoading(false)
+          return
+        } catch (e) {
+          console.error("Failed to load user from localStorage:", e)
+        }
       }
+
+      // If no user in localStorage, check if there's an active Supabase session
+      try {
+        const { getSupabaseBrowser } = await import("@/lib/supabase-client")
+        const supabase = getSupabaseBrowser()
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session?.user) {
+          console.log("[AuthContext] Found active Supabase session, fetching profile...")
+          
+          // Fetch user profile from API
+          const response = await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: session.user.id }),
+          })
+
+          if (response.ok) {
+            const { user: userData } = await response.json()
+            const userObj: User = {
+              id: userData.id,
+              email: userData.email,
+              name: userData.name || userData.email.split("@")[0],
+              role: userData.role || "CUSTOMER",
+            }
+
+            localStorage.setItem("user", JSON.stringify(userObj))
+            setUser(userObj)
+            console.log("[AuthContext] User authenticated from Supabase session")
+          }
+        }
+      } catch (error) {
+        console.error("[AuthContext] Error checking Supabase session:", error)
+      }
+
+      setIsLoading(false)
     }
-    setIsLoading(false)
+
+    initAuth()
 
     // Listen for storage events (for cross-tab auth and callback handler)
     const handleStorageChange = () => {
