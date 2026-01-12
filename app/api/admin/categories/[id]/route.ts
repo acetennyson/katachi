@@ -1,11 +1,18 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { NextRequest, NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/auth"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // ADMIN and SUPERADMIN can manage categories
+    const auth = await requireAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const { id } = await params
     const supabase = await getSupabaseServiceRole()
 
@@ -42,6 +49,12 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // ADMIN and SUPERADMIN can manage categories
+    const auth = await requireAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const { id } = await params
     const body = await request.json()
     const supabase = await getSupabaseServiceRole()
@@ -87,6 +100,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // ADMIN and SUPERADMIN can manage categories
+    const auth = await requireAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const { id } = await params
     const supabase = await getSupabaseServiceRole()
 

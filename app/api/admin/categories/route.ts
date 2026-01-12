@@ -1,11 +1,11 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { NextRequest, NextResponse } from "next/server"
-import { requireSuperAdmin } from "@/lib/auth"
+import { requireAdmin } from "@/lib/auth"
 
 export async function GET() {
   try {
-    // SUPERADMIN only - categories management
-    const auth = await requireSuperAdmin()
+    // ADMIN and SUPERADMIN can manage categories
+    const auth = await requireAdmin()
     if (!auth.ok) {
       return NextResponse.json({ error: auth.message }, { status: auth.status })
     }
@@ -41,8 +41,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // SUPERADMIN only - categories management
-    const auth = await requireSuperAdmin()
+    // ADMIN and SUPERADMIN can manage categories
+    const auth = await requireAdmin()
     if (!auth.ok) {
       return NextResponse.json({ error: auth.message }, { status: auth.status })
     }
