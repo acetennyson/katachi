@@ -96,17 +96,22 @@ export function AuthCallbackHandler() {
               const cleanUrl = window.location.pathname
               window.history.replaceState({}, document.title, cleanUrl)
 
-              // Show success message
+              // Show success message and redirect
               if (authType === "recovery") {
                 // Redirect to password reset page
+                console.log("[AuthCallbackHandler] Recovery flow - redirecting to reset password")
                 router.push("/auth/reset-password?verified=true")
-              } else {
-                // Redirect based on role
+              } else if (authType === "magiclink" || authType === "signup") {
+                // Magic link or signup - redirect based on role
+                console.log("[AuthCallbackHandler] Magic link flow - redirecting based on role:", user.role)
                 if (user.role === "ADMIN" || user.role === "SUPERADMIN") {
                   router.push("/admin")
                 } else {
                   router.push("/")
                 }
+              } else {
+                // Default redirect
+                router.push("/")
               }
             } else {
               throw new Error("Failed to fetch user profile")

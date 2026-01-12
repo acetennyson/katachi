@@ -1,19 +1,53 @@
+import { createServerClient } from "@supabase/ssr"
 import { type NextRequest, NextResponse } from "next/server"
 
-// RBAC Middleware
-// Note: Admin authentication is now handled via Supabase service role
-// Client admin routes (/admin/*) are protected in the component itself
-export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
+/**
+ * Middleware to handle Supabase auth session refresh
+ * This is required for SSR auth to work properly with cookies
+ */
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-  // Admin API routes use service role authentication in the endpoint itself
-  // So we don't need to block them here
-  // The endpoints validate using getSupabaseServiceRole() which has full access
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
 
-  return NextResponse.next()
+  // Refresh session if expired - this is important for SSR
+  await supabase.auth.getUser()
+
+  return response
 }
 
 export const config = {
-  // Removed /api/admin from matcher since it's handled by service role
-  matcher: [],
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 }
