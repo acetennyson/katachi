@@ -15,15 +15,19 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Katachi — Quality Products for Modern Living",
-  description: "Discover curated products across furniture, home decor, electronics, and more. Quality items delivered to your door.",
-  generator: "v0.app",
+  description: "Discover curated products across home decor, electronics, security and more. Quality items delivered to your door.",
+  generator: "Someone",
+  icons: {
+    icon: "/favicon/favicon.ico",
+    apple: "/favicon/apple-touch-icon.png"
+  },
   alternates: {
     canonical: "https://katachi.example/",
   },
   openGraph: {
     siteName: "Katachi",
     title: "Quality Products for Modern Living | Katachi",
-    description: "Discover curated products across furniture, home decor, electronics, and more. Quality items delivered to your door.",
+    description: "Discover curated products across home decor, electronics, security and more. Quality items delivered to your door.",
     type: "website",
     url: "https://katachi.example/",
     images: [
