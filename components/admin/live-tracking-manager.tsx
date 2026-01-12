@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Play, Pause, CheckCircle, XCircle, Trash2, Navigation } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MapPin, Play, Pause, CheckCircle, XCircle, Trash2, Navigation, Car, PersonStanding, Bike, Train, Plane } from "lucide-react"
 import { toast } from "sonner"
 
 interface LiveTrackingManagerProps {
@@ -50,6 +51,7 @@ export function LiveTrackingManager({ orderId, orderNumber }: LiveTrackingManage
   const [endLng, setEndLng] = useState("")
   const [endAddress, setEndAddress] = useState("")
   const [duration, setDuration] = useState("60")
+  const [routeType, setRouteType] = useState("DRIVING")
 
   useEffect(() => {
     fetchTracking()
@@ -89,6 +91,7 @@ export function LiveTrackingManager({ orderId, orderNumber }: LiveTrackingManage
           end_lng: parseFloat(endLng),
           end_address: endAddress,
           duration_minutes: parseInt(duration),
+          route_type: routeType,
         }),
       })
 
@@ -318,6 +321,67 @@ export function LiveTrackingManager({ orderId, orderNumber }: LiveTrackingManage
                 Use Current Location
               </Button>
             </div>
+          </div>
+
+          <div>
+            <Label>Route Type</Label>
+            <Select value={routeType} onValueChange={setRouteType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="STRAIGHT">
+                  <div className="flex items-center gap-2">
+                    <Plane className="w-4 h-4" />
+                    <div>
+                      <div className="font-medium">Straight Line (Air)</div>
+                      <div className="text-xs text-neutral-500">Direct path - for air freight</div>
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="DRIVING">
+                  <div className="flex items-center gap-2">
+                    <Car className="w-4 h-4" />
+                    <div>
+                      <div className="font-medium">Driving Route</div>
+                      <div className="text-xs text-neutral-500">Follows roads - realistic for cars/trucks</div>
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="WALKING">
+                  <div className="flex items-center gap-2">
+                    <PersonStanding className="w-4 h-4" />
+                    <div>
+                      <div className="font-medium">Walking Route</div>
+                      <div className="text-xs text-neutral-500">Pedestrian paths - for local delivery</div>
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="CYCLING">
+                  <div className="flex items-center gap-2">
+                    <Bike className="w-4 h-4" />
+                    <div>
+                      <div className="font-medium">Cycling Route</div>
+                      <div className="text-xs text-neutral-500">Bike paths - for bicycle delivery</div>
+                    </div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="TRANSIT">
+                  <div className="flex items-center gap-2">
+                    <Train className="w-4 h-4" />
+                    <div>
+                      <div className="font-medium">Public Transit</div>
+                      <div className="text-xs text-neutral-500">Bus/train routes</div>
+                    </div>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-neutral-500 mt-1">
+              {routeType === 'STRAIGHT' 
+                ? '⚡ Fast simulation - package moves in a straight line' 
+                : '🗺️ Realistic routing - uses actual paths (requires route calculation)'}
+            </p>
           </div>
 
           <div>

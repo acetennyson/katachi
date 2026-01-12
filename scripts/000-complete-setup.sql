@@ -246,6 +246,10 @@ CREATE TABLE IF NOT EXISTS order_live_tracking (
   end_lng DECIMAL(9, 6) NOT NULL,
   end_address TEXT,
   
+  -- Route configuration
+  route_type VARCHAR(20) NOT NULL DEFAULT 'STRAIGHT' CHECK (route_type IN ('STRAIGHT', 'DRIVING', 'WALKING', 'CYCLING', 'TRANSIT')),
+  route_waypoints JSONB, -- Array of {lat, lng} points for realistic path
+  
   -- Timing
   start_time TIMESTAMPTZ NOT NULL,
   duration_minutes INTEGER NOT NULL,

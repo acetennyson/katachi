@@ -9,8 +9,9 @@ import { ProductCard } from "@/components/product-card"
 import { motion } from "framer-motion"
 import { Reveal } from "@/components/reveal"
 import { Input } from "@/components/ui/input"
-import { Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Search, X, SlidersHorizontal } from "lucide-react"
 import { trackSearch, trackProductClick, trackPageView } from "@/lib/analytics"
 
 // Mock products removed - now fetching from database
@@ -244,10 +245,45 @@ export default function CatalogPage() {
                   </button>
                 )}
               </div>
+              
+              {/* Mobile Filter Button */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="lg:hidden">
+                    <SlidersHorizontal className="w-4 h-4 mr-2" />
+                    Filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px]">
+                  <SheetHeader>
+                    <SheetTitle>Filters</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <FilterPanel
+                      categories={["All", ...categories.map(c => c.name)]}
+                      selectedCategory={currentCategoryName || (selectedCategory ? "" : "All")}
+                      onCategoryChange={(cat) => {
+                        if (cat === "All") {
+                          handleCategoryChange(null)
+                        } else {
+                          const category = categories.find(c => c.name === cat)
+                          handleCategoryChange(category?.id || null)
+                        }
+                      }}
+                      sortBy={sortBy}
+                      onSortChange={handleSortChange}
+                      priceRange={priceRange}
+                      onPriceRangeChange={setPriceRange}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
+
+              {/* Desktop Sort Dropdown */}
               <select
                 value={sortBy}
                 onChange={(e) => handleSortChange(e.target.value)}
-                className="px-4 py-2 border border-neutral-300 rounded-md text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors cursor-pointer"
+                className="px-4 py-2 border border-neutral-300 rounded-md text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors cursor-pointer hidden md:block"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -260,8 +296,8 @@ export default function CatalogPage() {
           </Reveal>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Sidebar Filters */}
-            <div className="lg:col-span-1">
+            {/* Sidebar Filters - Hidden on mobile, shown on desktop */}
+            <div className="hidden lg:block lg:col-span-1">
               <div className="sticky top-32">
                 <FilterPanel
                   categories={["All", ...categories.map(c => c.name)]}

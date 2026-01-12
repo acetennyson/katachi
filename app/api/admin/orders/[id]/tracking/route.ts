@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { requireAdmin } from "@/lib/auth"
 import { calculateCurrentPosition } from "@/lib/live-tracking"
+import { fetchRoute } from "@/lib/route-service"
 
 /**
  * GET - Get live tracking for an order
@@ -77,6 +78,7 @@ export async function POST(
       end_lng,
       end_address,
       duration_minutes,
+      route_type = 'STRAIGHT',
     } = body
 
     // Validate inputs
@@ -101,6 +103,11 @@ export async function POST(
       )
     }
 
+    // Fetch route waypoints based on route type
+    console.log(`Fetching ${route_type} route from ${start_lat},${start_lng} to ${end_lat},${end_lng}`)
+    const waypoints = await fetchRoute(start_lat, start_lng, end_lat, end_lng, route_type)
+    console.log(`Route generated with ${waypoints.length} waypoints`)
+
     // Create tracking session
     const { data: tracking, error } = await supabase
       .from("order_live_tracking")
@@ -112,6 +119,8 @@ export async function POST(
         end_lat,
         end_lng,
         end_address,
+        route_type,
+        route_waypoints: waypoints,
         start_time: new Date().toISOString(),
         duration_minutes,
         status: "ACTIVE",

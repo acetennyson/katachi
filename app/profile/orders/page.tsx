@@ -7,7 +7,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { Reveal } from "@/components/reveal"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, MapPin, Navigation } from "lucide-react"
 
 interface Order {
   id: string
@@ -94,35 +94,58 @@ export default function OrdersPage() {
           <Reveal>
             <div className="space-y-4">
               {orders.map((order) => (
-                <Link key={order.id} href={`/profile/orders/${order.id}`}>
-                  <motion.div
-                    className="p-6 border border-neutral-200 rounded-lg hover:border-neutral-900 hover:shadow-md transition-all cursor-pointer"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-neutral-900">{order.order_number}</h3>
-                        <p className="text-sm text-neutral-600">{new Date(order.created_at).toLocaleDateString()}</p>
-                      </div>
-                      <span className={`px-3 py-1 text-sm rounded-full font-medium ${
-                        order.status === 'PAID' || order.status === 'DELIVERED' 
-                          ? 'bg-green-100 text-green-800' 
-                          : order.status === 'PENDING' 
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : order.status === 'CANCELLED'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {order.status}
-                      </span>
+                <motion.div
+                  key={order.id}
+                  className="p-6 border border-neutral-200 rounded-lg hover:border-neutral-900 hover:shadow-md transition-all"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-semibold text-neutral-900">{order.order_number}</h3>
+                      <p className="text-sm text-neutral-600">{new Date(order.created_at).toLocaleDateString()}</p>
                     </div>
-                    <div className="flex justify-between mt-4">
-                      <span className="text-neutral-600">{order.items} item(s)</span>
-                      <span className="font-bold text-neutral-900">€{order.total.toFixed(2)}</span>
-                    </div>
-                  </motion.div>
-                </Link>
+                    <span className={`px-3 py-1 text-sm rounded-full font-medium ${
+                      order.status === 'PAID' || order.status === 'DELIVERED' 
+                        ? 'bg-green-100 text-green-800' 
+                        : order.status === 'PENDING' 
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : order.status === 'CANCELLED'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-neutral-600">{order.items} item(s)</span>
+                    <span className="font-bold text-neutral-900">€{order.total.toFixed(2)}</span>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-4 border-t border-neutral-200">
+                    <Link href={`/profile/orders/${order.id}`} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        View Details
+                      </Button>
+                    </Link>
+                    <Link href={`/track/${order.order_number}`} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        <MapPin className="w-4 h-4 mr-2" />
+                        Track Order
+                      </Button>
+                    </Link>
+                    {(order.status === 'SHIPPED' || order.status === 'PROCESSING') && (
+                      <Link href={`/track/${order.order_number}/live`}>
+                        <Button className="bg-neutral-900 text-white hover:bg-neutral-800">
+                          <Navigation className="w-4 h-4 mr-2" />
+                          Live Map
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </motion.div>
               ))}
             </div>
           </Reveal>

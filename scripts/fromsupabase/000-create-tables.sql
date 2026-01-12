@@ -248,6 +248,33 @@ CREATE TABLE public.order_items (
   CONSTRAINT order_items_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES public.variants(id),
   CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id)
 );
+CREATE TABLE public.order_live_tracking (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  order_id uuid NOT NULL UNIQUE,
+  start_lat numeric NOT NULL,
+  start_lng numeric NOT NULL,
+  start_address text,
+  end_lat numeric NOT NULL,
+  end_lng numeric NOT NULL,
+  end_address text,
+  start_time timestamp with time zone NOT NULL,
+  duration_minutes integer NOT NULL,
+  paused_at timestamp with time zone,
+  resumed_at timestamp with time zone,
+  total_paused_duration integer DEFAULT 0,
+  status character varying NOT NULL DEFAULT 'ACTIVE'::character varying,
+  current_lat numeric,
+  current_lng numeric,
+  last_updated timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  created_by uuid,
+  cancelled_at timestamp with time zone,
+  cancelled_by uuid,
+  route_type character varying NOT NULL DEFAULT 'STRAIGHT'::character varying CHECK (route_type::text = ANY (ARRAY['STRAIGHT'::character varying, 'DRIVING'::character varying, 'WALKING'::character varying, 'CYCLING'::character varying, 'TRANSIT'::character varying]::text[])),
+  route_waypoints jsonb,
+  CONSTRAINT order_live_tracking_pkey PRIMARY KEY (id),
+  CONSTRAINT order_live_tracking_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
+);
 CREATE TABLE public.orders (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
@@ -266,6 +293,9 @@ CREATE TABLE public.orders (
   shipping_cost numeric DEFAULT 0.00,
   shipping_method_id text,
   shipping_method_name text,
+  tracking_number character varying,
+  carrier character varying,
+  estimated_delivery timestamp with time zone,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
 );

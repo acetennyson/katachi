@@ -3,6 +3,8 @@
  * Calculate current position based on start, end, time elapsed, and pauses
  */
 
+import { calculatePositionOnRoute } from './route-service'
+
 export interface TrackingSession {
   id: string
   order_id: string
@@ -12,6 +14,8 @@ export interface TrackingSession {
   end_lat: number
   end_lng: number
   end_address?: string
+  route_type?: string
+  route_waypoints?: Array<{ lat: number; lng: number }>
   start_time: string
   duration_minutes: number
   paused_at?: string
@@ -63,9 +67,20 @@ export function calculateCurrentPosition(tracking: TrackingSession): {
     }
   }
   
-  // Linear interpolation
-  const lat = tracking.start_lat + (tracking.end_lat - tracking.start_lat) * progress
-  const lng = tracking.start_lng + (tracking.end_lng - tracking.start_lng) * progress
+  // Calculate position based on route type
+  let lat: number
+  let lng: number
+  
+  if (tracking.route_waypoints && tracking.route_waypoints.length > 0) {
+    // Use waypoints for realistic path following
+    const position = calculatePositionOnRoute(tracking.route_waypoints, progress)
+    lat = position.lat
+    lng = position.lng
+  } else {
+    // Fallback to linear interpolation (straight line)
+    lat = tracking.start_lat + (tracking.end_lat - tracking.start_lat) * progress
+    lng = tracking.start_lng + (tracking.end_lng - tracking.start_lng) * progress
+  }
   
   // Calculate ETA
   const remainingMs = totalDurationMs - elapsedMs

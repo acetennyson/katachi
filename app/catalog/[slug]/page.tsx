@@ -1,6 +1,18 @@
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import ProductDetailClient from "./product-detail-client"
+import { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const slug = (await params).slug
+
+  // Since this uses mock data, we'll provide generic metadata
+  // In production, you'd fetch from database using slug
+  return {
+    title: `${slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} | Katachi`,
+    description: "Discover quality products at Katachi - Quality products for modern living",
+  }
+}
 
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
   const slug = (await params).slug

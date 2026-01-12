@@ -3,6 +3,7 @@ import { Footer } from "@/components/footer"
 import { ProductRecommendations } from "@/components/product-recommendations"
 import ProductPageClient from "./product-page-client"
 import { getSupabaseServiceRole } from "@/lib/supabase"
+import { Metadata } from "next"
 
 // Keeping mock products as fallback for development
 const mockProducts: Record<string, any> = {
@@ -116,6 +117,63 @@ const mockProducts: Record<string, any> = {
     inStock: true,
     specifications: ["Elegant design", "Copper frame", "Sage velvet upholstery", "Limited availability"],
   },
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+
+  try {
+    const supabase = await getSupabaseServiceRole()
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, name, description, price, image, images")
+      .eq("id", id)
+      .single()
+
+    if (error || !data) {
+      return {
+        title: "Product | Katachi",
+        description: "Discover quality products at Katachi",
+      }
+    }
+
+    const productName = data.name || "Product"
+    const description = data.description?.substring(0, 160) || "Quality product available at Katachi"
+    const price = data.price ? `€${data.price}` : ""
+    const imageUrl = data.image || (Array.isArray(data.images) && data.images[0]) || "/placeholder.svg"
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://katachi.example"
+    const fullImageUrl = imageUrl.startsWith("http") ? imageUrl : `${baseUrl}${imageUrl}`
+
+    return {
+      title: `${productName} ${price ? `- ${price}` : ""} | Katachi`,
+      description,
+      openGraph: {
+        title: productName,
+        description,
+        images: [
+          {
+            url: fullImageUrl,
+            width: 1200,
+            height: 630,
+            alt: productName,
+          },
+        ],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: productName,
+        description,
+        images: [fullImageUrl],
+      },
+    }
+  } catch (error) {
+    console.error("Error generating product metadata:", error)
+    return {
+      title: "Product | Katachi",
+      description: "Discover quality products at Katachi",
+    }
+  }
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
