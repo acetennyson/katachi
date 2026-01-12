@@ -185,26 +185,30 @@ export default function ProductPageClient({ product }: ProductPageClientProps) {
                 <div>
                   <h3 className="text-sm font-semibold text-neutral-900 mb-4">Color</h3>
                   <div className="flex gap-3">
-                    {productColors.map((color: any) => (
-                      <motion.button
-                        key={color.name}
-                        onClick={() => setSelectedColor(color.name)}
-                        className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                          selectedColor === color.name
-                            ? "border-neutral-900 bg-neutral-900 text-white"
-                            : "border-neutral-200 text-neutral-900 hover:border-neutral-900"
-                        }`}
-                        whileHover={{ scale: 1.05 }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded-full border"
-                            style={{ backgroundColor: color.value, borderColor: color.value }}
-                          ></div>
-                          {color.name}
-                        </div>
-                      </motion.button>
-                    ))}
+                    {productColors.map((color: any) => {
+                      const colorValue = color.hex || color.value || color.name
+                      return (
+                        <motion.button
+                          key={color.name}
+                          onClick={() => setSelectedColor(color.name)}
+                          className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                            selectedColor === color.name
+                              ? "border-neutral-900 bg-neutral-900 text-white"
+                              : "border-neutral-200 text-neutral-900 hover:border-neutral-900"
+                          }`}
+                          whileHover={{ scale: 1.05 }}
+                          title={color.name}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-4 h-4 rounded-full border"
+                              style={{ backgroundColor: colorValue, borderColor: colorValue }}
+                            ></div>
+                            {color.name}
+                          </div>
+                        </motion.button>
+                      )
+                    })}
                   </div>
                 </div>
               )}

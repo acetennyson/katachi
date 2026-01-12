@@ -8,7 +8,7 @@ import { Reveal } from "./reveal"
 
 const featuredProducts = [
   {
-    id: "4",
+    id: "d442d623-0ba2-47fe-bad8-915862c5fe75",
     name: "Verde Modular Chair",
     price: "€4,890",
     image: "/green-velvet-modular-chair.png",
@@ -27,7 +27,7 @@ const featuredProducts = [
     dimensions: "W: 180cm × D: 90cm × H: 75cm",
   },
   {
-    id: "7",
+    id: "5995b9a8-a896-4970-8667-227c68fe1ae1",
     name: "Terracotta Cloud Chair",
     price: "€5,250",
     image: "/terracotta-cloud-chair.png",
@@ -46,7 +46,7 @@ const featuredProducts = [
     dimensions: "W: 95cm × D: 85cm × H: 80cm",
   },
   {
-    id: "8",
+    id: "7e0be5fe-7db8-48dd-8e21-9ca3177a4dbf",
     name: "Sage Copper Lounge",
     price: "€4,675",
     image: "/sage-copper-lounge-chair.png",

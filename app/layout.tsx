@@ -14,22 +14,22 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Katachi — Design furniture for spaces that breathe.",
-  description: "Architected in Belgium, built to last—timeless pieces.",
+  title: "Katachi — Quality Products for Modern Living",
+  description: "Discover curated products across furniture, home decor, electronics, and more. Quality items delivered to your door.",
   generator: "v0.app",
   alternates: {
     canonical: "https://katachi.example/",
   },
   openGraph: {
     siteName: "Katachi",
-    title: "Design furniture for spaces that breathe. | Katachi",
-    description: "Architected in Belgium, built to last—timeless pieces.",
+    title: "Quality Products for Modern Living | Katachi",
+    description: "Discover curated products across furniture, home decor, electronics, and more. Quality items delivered to your door.",
     type: "website",
     url: "https://katachi.example/",
     images: [
       {
         url: "/images/opengraph-katachi.jpeg",
-        alt: "Katachi design furniture — timeless pieces, architected in Belgium",
+        alt: "Katachi — Your destination for quality products",
         width: 1200,
         height: 630,
       },
@@ -38,12 +38,12 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Design furniture for spaces that breathe. | Katachi",
-    description: "Architected in Belgium, built to last—timeless pieces.",
+    title: "Quality Products for Modern Living | Katachi",
+    description: "Discover curated products across furniture, home decor, electronics, and more. Quality items delivered to your door.",
     images: [
       {
         url: "/images/opengraph-katachi.jpeg",
-        alt: "Katachi design furniture — timeless pieces, architected in Belgium",
+        alt: "Katachi — Your destination for quality products",
       },
     ],
     site: "@katachi",

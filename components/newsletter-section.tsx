@@ -96,9 +96,9 @@ export function NewsletterSection() {
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Check size={24} className="text-green-600" />
                   </div>
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-2">Welcome to KATACHI</h3>
+                  <h3 className="text-xl font-semibold text-neutral-900 mb-2">Welcome to Katachi</h3>
                   <p className="text-neutral-600">
-                    Thank you for subscribing. You'll receive our next newsletter with exclusive insights and new
+                    Thank you for subscribing. You'll receive our next newsletter with exclusive deals and new
                     arrivals.
                   </p>
                 </motion.div>

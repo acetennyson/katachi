@@ -202,6 +202,11 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_method_id TEXT REFERENCES shipping_methods(id),
   shipping_method_name TEXT,
   
+  -- Tracking info (added for order tracking feature)
+  tracking_number VARCHAR(255),
+  carrier VARCHAR(100),
+  estimated_delivery TIMESTAMPTZ,
+  
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -223,6 +228,50 @@ CREATE TABLE IF NOT EXISTS order_items (
   
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- ============================================================
+-- LIVE TRACKING (Real-time GPS-style package tracking)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS order_live_tracking (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  
+  -- Route information (DECIMAL(9,6) covers lat -90 to 90, lng -180 to 180)
+  start_lat DECIMAL(9, 6) NOT NULL,
+  start_lng DECIMAL(9, 6) NOT NULL,
+  start_address TEXT,
+  
+  end_lat DECIMAL(9, 6) NOT NULL,
+  end_lng DECIMAL(9, 6) NOT NULL,
+  end_address TEXT,
+  
+  -- Timing
+  start_time TIMESTAMPTZ NOT NULL,
+  duration_minutes INTEGER NOT NULL,
+  paused_at TIMESTAMPTZ,
+  resumed_at TIMESTAMPTZ,
+  total_paused_duration INTEGER DEFAULT 0,
+  
+  -- Current status
+  status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED')),
+  current_lat DECIMAL(9, 6),
+  current_lng DECIMAL(9, 6),
+  last_updated TIMESTAMPTZ DEFAULT NOW(),
+  
+  -- Metadata
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by UUID,
+  cancelled_at TIMESTAMPTZ,
+  cancelled_by UUID,
+  
+  UNIQUE(order_id)
+);
+
+-- Indexes for tracking
+CREATE INDEX IF NOT EXISTS idx_orders_tracking_number ON orders(tracking_number);
+CREATE INDEX IF NOT EXISTS idx_order_live_tracking_order_id ON order_live_tracking(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_live_tracking_status ON order_live_tracking(status);
 
 -- ============================================================
 -- 7. PAYMENTS

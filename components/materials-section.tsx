@@ -101,8 +101,7 @@ export function MaterialsSection() {
                 </motion.h2>
               </AnimatePresence>
               <p className="text-lg text-white/90 leading-relaxed max-w-2xl">
-                Every piece begins with the finest materials, carefully selected for their beauty, durability, and
-                sustainable origins. Our craftspeople honor traditional techniques while embracing modern precision.
+                We carefully curate products from trusted brands and makers, selecting items for their quality, design, and value. From furniture to electronics, every product meets our high standards.
               </p>
             </div>
           </Reveal>
@@ -113,10 +112,9 @@ export function MaterialsSection() {
         <Reveal delay={0.3}>
           <blockquote className="pl-0 py-4">
             <p className="text-xl text-white leading-relaxed italic lg:text-base font-medium">
-              "We believe in creating furniture that transcends trends—pieces that become more beautiful with age,
-              carrying stories and memories through generations."
+              "We believe in offering products that stand the test of time—quality items that bring value to your life and home for years to come."
             </p>
-            <footer className="mt-4 text-sm text-white/70">— KATACHI Studio</footer>
+            <footer className="mt-4 text-sm text-white/70">— Katachi</footer>
           </blockquote>
         </Reveal>
       </div>

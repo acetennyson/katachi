@@ -8,11 +8,10 @@ export function Footer() {
 
   const footerLinks = {
     Shop: [
-      { name: "Catalog", href: "/catalog" },
-      { name: "Chairs", href: "/catalog?category=Chairs" },
-      { name: "Tables", href: "/catalog?category=Tables" },
-      { name: "Storage", href: "/catalog?category=Storage" },
+      { name: "All Products", href: "/catalog" },
       { name: "New Arrivals", href: "/catalog" },
+      { name: "Best Sellers", href: "/catalog" },
+      { name: "Sale", href: "/catalog" },
     ],
     Account: [
       { name: "Sign In", href: "/auth/signin" },
@@ -52,8 +51,7 @@ export function Footer() {
                 KATACHI
               </Link>
               <p className="text-neutral-600 mb-6 leading-relaxed mt-4">
-                Architected in Belgium, built to last. We create timeless furniture pieces in solid oak, steel, and
-                linen for spaces that breathe.
+                Quality products for modern living. We curate the best items across multiple categories, delivering excellence to your door.
               </p>
               <div className="flex space-x-4">
                 {socialLinks.map((social) => (
@@ -115,7 +113,7 @@ export function Footer() {
           viewport={{ once: true }}
         >
           <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 text-sm text-neutral-500 text-center">
-            <p>&copy; {currentYear} KATACHI Studio. All rights reserved.</p>
+            <p>&copy; {currentYear} Katachi. All rights reserved.</p>
             <div className="flex space-x-6">
               <a href="#" className="hover:text-neutral-700 transition-colors">
                 Privacy Policy
