@@ -17,14 +17,16 @@ export async function POST(request: NextRequest) {
     // Send magic link
     // Note: Redirect URL should match what's configured in Supabase Dashboard
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    const callbackUrl = `${siteUrl}/auth/callback`
+    
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: redirectTo || `${siteUrl}/`,
+        emailRedirectTo: redirectTo || callbackUrl,
       },
     })
     
-    console.log('[Magic Link] Sent to:', email, 'Redirect URL:', redirectTo || `${siteUrl}/`)
+    console.log('[Magic Link] Sent to:', email, 'Redirect URL:', redirectTo || callbackUrl)
 
     if (error) {
       console.error("Magic link error:", error)

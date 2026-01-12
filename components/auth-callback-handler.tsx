@@ -29,84 +29,15 @@ export function AuthCallbackHandler() {
       console.log("[AuthCallbackHandler] Hash:", window.location.hash)
       console.log("[AuthCallbackHandler] Search:", window.location.search)
       
-      const supabase = getSupabaseBrowser()
-      
-      // Check for PKCE flow (code parameter in query string)
-      const searchParams = new URLSearchParams(window.location.search)
-      const code = searchParams.get("code")
-      
-      if (code && !hasProcessed.current) {
-        hasProcessed.current = true
-        setIsProcessing(true)
-        console.log("[AuthCallbackHandler] PKCE code found, exchanging for session...")
-
-        try {
-          // Exchange code for session (Supabase handles this automatically)
-          const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
-
-          if (sessionError) {
-            console.error("[AuthCallbackHandler] Code exchange error:", sessionError)
-            throw sessionError
-          }
-
-          if (sessionData.user) {
-            console.log("[AuthCallbackHandler] Session established via PKCE")
-            // Fetch user profile from our API
-            const response = await fetch("/api/auth/session", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ userId: sessionData.user.id }),
-            })
-
-            if (response.ok) {
-              const { user } = await response.json()
-              const userData: User = {
-                id: user.id,
-                email: user.email,
-                name: user.name || user.email.split("@")[0],
-                role: user.role || "CUSTOMER",
-              }
-
-              // Store in localStorage and context
-              localStorage.setItem("user", JSON.stringify(userData))
-              
-              // Trigger a storage event to update AuthContext
-              window.dispatchEvent(new Event("storage"))
-
-              // Clean up URL
-              const cleanUrl = window.location.pathname
-              window.history.replaceState({}, document.title, cleanUrl)
-
-              // Redirect based on role
-              if (user.role === "ADMIN" || user.role === "SUPERADMIN") {
-                router.push("/admin")
-              } else {
-                router.push("/")
-              }
-            } else {
-              throw new Error("Failed to fetch user profile")
-            }
-          }
-        } catch (error) {
-          console.error("[AuthCallbackHandler] PKCE auth error:", error)
-          // Clean up URL even on error
-          const cleanUrl = window.location.pathname
-          window.history.replaceState({}, document.title, cleanUrl)
-          
-          alert("Authentication failed. Please try again.")
-        } finally {
-          setIsProcessing(false)
-        }
-        return
-      }
-      
       // Check for implicit flow (access_token in hash - older method)
+      // Note: PKCE flow (code parameter) is handled server-side at /auth/callback route
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const searchParams = new URLSearchParams(window.location.search)
       const accessToken = hashParams.get("access_token")
       const refreshToken = hashParams.get("refresh_token")
       const type = hashParams.get("type")
 
-      // Also check query params for access_token
+      // Also check query params for access_token (fallback)
       const accessTokenQuery = searchParams.get("access_token")
       const refreshTokenQuery = searchParams.get("refresh_token")
       const typeQuery = searchParams.get("type")
@@ -125,6 +56,8 @@ export function AuthCallbackHandler() {
         console.log("[AuthCallbackHandler] Starting auth process (implicit flow):", { type: authType })
 
         try {
+          const supabase = getSupabaseBrowser()
+          
           // Set the session using the tokens (implicit flow)
           const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
             access_token: token,

@@ -17,11 +17,13 @@ export async function POST(request: NextRequest) {
     // Send password reset email
     // Note: Redirect URL should match what's configured in Supabase Dashboard
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    const callbackUrl = `${siteUrl}/auth/callback?next=/auth/reset-password?verified=true`
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectTo || `${siteUrl}/`,
+      redirectTo: redirectTo || callbackUrl,
     })
     
-    console.log('[Password Reset] Sent to:', email, 'Redirect URL:', redirectTo || `${siteUrl}/`)
+    console.log('[Password Reset] Sent to:', email, 'Redirect URL:', redirectTo || callbackUrl)
 
     if (error) {
       console.error("Password reset error:", error)
