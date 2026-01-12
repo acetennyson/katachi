@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
 
     const supabase = await getSupabaseServer()
 
-    // Send password reset email with implicit flow (tokens in URL hash, not PKCE)
+    // Send password reset email - redirect to callback route
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    const callbackUrl = `${siteUrl}/`
+    const callbackUrl = `${siteUrl}/auth/callback`
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectTo || callbackUrl,

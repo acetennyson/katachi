@@ -14,17 +14,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = await getSupabaseServer()
 
-    // Send magic link with implicit flow (tokens in URL hash, not PKCE)
-    // This avoids the PKCE code verifier issue
+    // Send magic link - redirect to callback route
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    const callbackUrl = `${siteUrl}/`
+    const callbackUrl = `${siteUrl}/auth/callback`
     
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: redirectTo || callbackUrl,
-        // Don't use PKCE for email links
-        shouldCreateUser: false,
       },
     })
     
