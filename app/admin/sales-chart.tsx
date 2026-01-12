@@ -14,7 +14,7 @@ export function SalesChart() {
 
   const fetchSalesData = async () => {
     try {
-      const response = await fetch("/api/admin/orders")
+      const response = await fetch("/api/admin/orders", { cache: 'no-store' })
       const ordersData = await response.json()
 
       // Group orders by day and calculate revenue and count

@@ -1,13 +1,22 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/auth"
+import { logAdminActivity, extractRequestMetadata } from "@/lib/admin-activity"
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const auth = await requireAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const { id } = await params
     const supabase = await getSupabaseServiceRole()
+    const isSuperAdmin = auth.user.role === "SUPERADMIN"
 
     const { data: product, error } = await supabase
       .from("products")
@@ -19,6 +28,24 @@ export async function GET(
       console.error("[Admin Product API] Error:", error)
       throw error
     }
+
+    // ADMIN can only view their own products
+    if (!isSuperAdmin && product.created_by !== auth.user.id) {
+      return NextResponse.json(
+        { error: "Forbidden - You can only view your own products" },
+        { status: 403 }
+      )
+    }
+
+    // Log activity
+    const metadata = extractRequestMetadata(request.headers)
+    await logAdminActivity({
+      adminId: auth.user.id,
+      action: "order_viewed",
+      resourceType: "product",
+      resourceId: id,
+      ...metadata,
+    })
 
     return NextResponse.json({ 
       success: true, 
@@ -42,9 +69,32 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const auth = await requireAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const { id } = await params
     const body = await request.json()
     const supabase = await getSupabaseServiceRole()
+    const isSuperAdmin = auth.user.role === "SUPERADMIN"
+
+    // Check ownership - ADMIN can only edit their own products
+    if (!isSuperAdmin) {
+      const { data: existing } = await supabase
+        .from("products")
+        .select("created_by")
+        .eq("id", id)
+        .single()
+
+      if (existing && existing.created_by !== auth.user.id) {
+        return NextResponse.json(
+          { error: "Forbidden - You can only edit your own products" },
+          { status: 403 }
+        )
+      }
+    }
 
     const { data: product, error } = await supabase
       .from("products")
@@ -69,6 +119,7 @@ export async function PUT(
         badge: body.badge,
         specifications: body.specifications,
         attributes: body.attributes,
+        updated_by: auth.user.id, // Track who updated
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -79,6 +130,17 @@ export async function PUT(
       console.error("[Admin Product Update API] Error:", error)
       throw error
     }
+
+    // Log activity
+    const metadata = extractRequestMetadata(request.headers)
+    await logAdminActivity({
+      adminId: auth.user.id,
+      action: "product_updated",
+      resourceType: "product",
+      resourceId: id,
+      details: { productName: body.name },
+      ...metadata,
+    })
 
     return NextResponse.json({ 
       success: true, 
@@ -102,8 +164,30 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const auth = await requireAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const { id } = await params
     const supabase = await getSupabaseServiceRole()
+    const isSuperAdmin = auth.user.role === "SUPERADMIN"
+
+    // Get product details before deletion
+    const { data: product } = await supabase
+      .from("products")
+      .select("created_by, name")
+      .eq("id", id)
+      .single()
+
+    // Check ownership - ADMIN can only delete their own products
+    if (!isSuperAdmin && product && product.created_by !== auth.user.id) {
+      return NextResponse.json(
+        { error: "Forbidden - You can only delete your own products" },
+        { status: 403 }
+      )
+    }
 
     const { error } = await supabase
       .from("products")
@@ -114,6 +198,17 @@ export async function DELETE(
       console.error("[Admin Product Delete API] Error:", error)
       throw error
     }
+
+    // Log activity
+    const metadata = extractRequestMetadata(request.headers)
+    await logAdminActivity({
+      adminId: auth.user.id,
+      action: "product_deleted",
+      resourceType: "product",
+      resourceId: id,
+      details: { productName: product?.name },
+      ...metadata,
+    })
 
     return NextResponse.json({ 
       success: true,

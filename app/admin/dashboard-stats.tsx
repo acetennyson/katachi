@@ -16,6 +16,9 @@ interface StatsData {
 }
 
 export function DashboardStats() {
+  // Render a lightweight loading state initially
+  // Both SUPERADMIN and ADMIN can see this now; data will be scoped by the API
+  
   const [stats, setStats] = useState<StatsData>({
     totalRevenue: 0,
     revenueChange: 0,
@@ -36,8 +39,8 @@ export function DashboardStats() {
     try {
       // Fetch real data from APIs
       const [ordersRes, productsRes] = await Promise.all([
-        fetch("/api/admin/orders"),
-        fetch("/api/admin/products"),
+        fetch("/api/admin/orders", { cache: 'no-store' }),
+        fetch("/api/admin/products", { cache: 'no-store' }),
       ])
 
       const ordersData = await ordersRes.json()

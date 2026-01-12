@@ -21,11 +21,11 @@ export function Footer() {
       { name: "Admin", href: "/admin" },
     ],
     Support: [
+      { name: "Track Order", href: "/track" },
       { name: "Messages", href: "/messages" },
       { name: "Contact", href: "#" },
       { name: "Shipping", href: "#" },
       { name: "Returns", href: "#" },
-      { name: "Care Instructions", href: "#" },
     ],
   }
 

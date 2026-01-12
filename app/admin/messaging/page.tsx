@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { AdminLayout } from "@/components/admin/admin-layout"
+import { SuperAdminGuard } from "@/components/admin/superadmin-guard"
 import { motion } from "framer-motion"
 import { Reveal } from "@/components/reveal"
 import { Button } from "@/components/ui/button"
@@ -81,6 +82,7 @@ export default function AdminMessaging() {
   })
 
   return (
+    <SuperAdminGuard>
     <AdminLayout>
       <div className="container-custom max-w-7xl">
           <Reveal>
@@ -221,5 +223,6 @@ export default function AdminMessaging() {
           </div>
         </div>
     </AdminLayout>
+    </SuperAdminGuard>
   )
 }

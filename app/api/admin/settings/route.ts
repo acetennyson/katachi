@@ -1,9 +1,16 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { type NextRequest, NextResponse } from "next/server"
 import settings from "@/lib/constants/settings"
+import { requireSuperAdmin } from "@/lib/auth"
 
 export async function GET() {
   try {
+    // SUPERADMIN only - site settings
+    const auth = await requireSuperAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const supabase = await getSupabaseServiceRole()
 
     // Fetch all settings from database
@@ -53,6 +60,12 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
+    // SUPERADMIN only - site settings
+    const auth = await requireSuperAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const supabase = await getSupabaseServiceRole()
     const body = await request.json()
 

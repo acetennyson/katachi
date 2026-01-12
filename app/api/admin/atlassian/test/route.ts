@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { getSupabaseServer, getSupabaseServiceRole } from "@/lib/supabase"
+import { getSupabaseServiceRole } from "@/lib/supabase"
+import { requireAdmin } from "@/lib/auth"
 
 function basicAuthHeader(email: string, token: string): string {
   const encoded = Buffer.from(`${email}:${token}`).toString("base64")
@@ -9,22 +10,6 @@ function basicAuthHeader(email: string, token: string): string {
 function normalizeSiteUrl(raw: string): string {
   const url = raw.replace(/\/$/, "")
   return url.endsWith("/wiki") ? url.slice(0, -4) : url
-}
-
-async function requireAdmin() {
-  const supabase = await getSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { ok: false, status: 401 as const, message: "Unauthorized" }
-
-  const sr = await getSupabaseServiceRole()
-  const { data: profile } = await sr.from("profiles").select("role").eq("id", user.id).single()
-
-  if (profile?.role !== "ADMIN") return { ok: false, status: 403 as const, message: "Forbidden" }
-
-  return { ok: true as const, user }
 }
 
 async function getSetting<T = any>(key: string): Promise<T | null> {
@@ -56,10 +41,18 @@ export async function POST() {
   const authHeader = basicAuthHeader(email, token)
 
   const results: any = { jira: null, confluence: null }
+  const debug: any = {
+    siteUrl,
+    email,
+    hasToken: !!token,
+    tokenPrefix: token ? token.substring(0, 6) + "..." : "none",
+  }
 
   // Jira: /myself
   try {
-    const r = await fetch(`${siteUrl}/rest/api/3/myself`, {
+    const jiraUrl = `${siteUrl}/rest/api/3/myself`
+    debug.jiraUrl = jiraUrl
+    const r = await fetch(jiraUrl, {
       headers: { Authorization: authHeader, Accept: "application/json" },
       // @ts-ignore
       cache: "no-store",
@@ -72,7 +65,9 @@ export async function POST() {
 
   // Confluence: /wiki/rest/api/user/current
   try {
-    const r = await fetch(`${siteUrl}/wiki/rest/api/user/current`, {
+    const confluenceUrl = `${siteUrl}/wiki/rest/api/user/current`
+    debug.confluenceUrl = confluenceUrl
+    const r = await fetch(confluenceUrl, {
       headers: { Authorization: authHeader, Accept: "application/json" },
       // @ts-ignore
       cache: "no-store",
@@ -85,5 +80,5 @@ export async function POST() {
 
   const ok = !!(results.jira?.ok && results.confluence?.ok)
 
-  return NextResponse.json({ success: ok, results })
+  return NextResponse.json({ success: ok, results, debug })
 }

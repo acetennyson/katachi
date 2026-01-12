@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [analyticsData, setAnalyticsData] = useState<any>(null)
   const [realtimeData, setRealtimeData] = useState<any>(null)
+  const isSuperAdmin = user?.role === "SUPERADMIN"
 
   useEffect(() => {
     if (!isLoading) {
@@ -85,15 +86,17 @@ export default function AdminDashboard() {
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-neutral-900">Admin Dashboard</h1>
-            <p className="text-neutral-600 mt-1">Welcome back! Here's what's happening with your store.</p>
+            <p className="text-neutral-600 mt-1">
+              Welcome back! {isSuperAdmin ? "Here's what's happening with your store." : "Manage your products below."}
+            </p>
           </div>
 
-          {/* Stats Cards */}
+          {/* Dashboard Stats (scoped by API to role) */}
           <div className="mb-8">
             <DashboardStats />
           </div>
 
-          {/* Analytics Overview */}
+          {/* Analytics Overview (scoped by API to role) */}
           {analyticsData && (
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
@@ -164,19 +167,51 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Charts and Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <RevenueChart />
-            <RecentOrders />
-          </div>
+          {/* Charts and Recent Activity (scoped by API to role) */}
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <RevenueChart />
+              <RecentOrders />
+            </div>
 
-          {/* Sales Chart */}
-          <div className="mb-8">
-            <SalesChart />
-          </div>
+            {/* Sales Chart */}
+            <div className="mb-8">
+              <SalesChart />
+            </div>
+          </>
+
+          {/* ADMIN - Helpful intro */}
+          {!isSuperAdmin && (
+            <div className="bg-white rounded-lg border border-neutral-200 p-8 mb-8">
+              <h2 className="text-2xl font-bold text-neutral-900 mb-4">👋 Welcome, Admin!</h2>
+              <p className="text-neutral-600 mb-6">
+                You can manage your products and view analytics for items you've uploaded. 
+                Click on "Products" below to get started.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
+                  <p className="text-sm text-purple-600 font-medium mb-1">Your Products</p>
+                  <p className="text-lg font-bold text-purple-900">Manage in Products</p>
+                  <p className="text-xs text-purple-600 mt-1">Add, edit, view your items</p>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-sm text-blue-600 font-medium mb-1">Product Analytics</p>
+                  <p className="text-lg font-bold text-blue-900">Coming Soon</p>
+                  <p className="text-xs text-blue-600 mt-1">Views, conversions, revenue</p>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                  <p className="text-sm text-green-600 font-medium mb-1">Activity Log</p>
+                  <p className="text-lg font-bold text-green-900">Coming Soon</p>
+                  <p className="text-xs text-green-600 mt-1">Track your actions</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* SUPERADMIN ONLY - Analytics */}
+            {isSuperAdmin && (
             <Link href="/admin/analytics">
               <motion.div
                 className="p-6 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all cursor-pointer"
@@ -191,7 +226,9 @@ export default function AdminDashboard() {
                 <p className="text-sm opacity-90">View detailed insights</p>
               </motion.div>
             </Link>
+            )}
 
+            {/* ALL ADMINS - Products */}
             <Link href="/admin/products">
               <motion.div
                 className="p-6 bg-white border border-neutral-200 rounded-lg hover:shadow-lg transition-all cursor-pointer"
@@ -203,10 +240,12 @@ export default function AdminDashboard() {
                   </div>
                   <h3 className="text-lg font-bold text-neutral-900">Products</h3>
                 </div>
-                <p className="text-sm text-neutral-600">Manage your product catalog</p>
+                <p className="text-sm text-neutral-600">{isSuperAdmin ? "Manage all products" : "Manage your products"}</p>
               </motion.div>
             </Link>
 
+            {/* SUPERADMIN ONLY - Orders */}
+            {isSuperAdmin && (
             <Link href="/admin/orders">
               <motion.div
                 className="p-6 bg-white border border-neutral-200 rounded-lg hover:shadow-lg transition-all cursor-pointer"
@@ -218,10 +257,13 @@ export default function AdminDashboard() {
                   </div>
                   <h3 className="text-lg font-bold text-neutral-900">Orders</h3>
                 </div>
-                <p className="text-sm text-neutral-600">View and manage orders</p>
+                <p className="text-sm text-neutral-600">View and manage all orders</p>
               </motion.div>
             </Link>
+            )}
 
+            {/* SUPERADMIN ONLY - Messaging */}
+            {isSuperAdmin && (
             <Link href="/admin/messaging">
               <motion.div
                 className="p-6 bg-white border border-neutral-200 rounded-lg hover:shadow-lg transition-all cursor-pointer"
@@ -236,7 +278,10 @@ export default function AdminDashboard() {
                 <p className="text-sm text-neutral-600">Customer messages</p>
               </motion.div>
             </Link>
+            )}
 
+            {/* SUPERADMIN ONLY - Knowledge Base */}
+            {isSuperAdmin && (
             <Link href="/admin/knowledge-base">
               <motion.div
                 className="p-6 bg-white border border-neutral-200 rounded-lg hover:shadow-lg transition-all cursor-pointer"
@@ -251,7 +296,10 @@ export default function AdminDashboard() {
                 <p className="text-sm text-neutral-600">Manage chatbot Q&A</p>
               </motion.div>
             </Link>
+            )}
 
+            {/* SUPERADMIN ONLY - Chat Logs */}
+            {isSuperAdmin && (
             <Link href="/admin/chat-logs">
               <motion.div
                 className="p-6 bg-white border border-neutral-200 rounded-lg hover:shadow-lg transition-all cursor-pointer"
@@ -266,7 +314,10 @@ export default function AdminDashboard() {
                 <p className="text-sm text-neutral-600">View AI conversations</p>
               </motion.div>
             </Link>
+            )}
 
+            {/* SUPERADMIN ONLY - Settings */}
+            {isSuperAdmin && (
             <Link href="/admin/settings">
               <motion.div
                 className="p-6 bg-white border border-neutral-200 rounded-lg hover:shadow-lg transition-all cursor-pointer"
@@ -281,6 +332,7 @@ export default function AdminDashboard() {
                 <p className="text-sm text-neutral-600">Configure site settings</p>
               </motion.div>
             </Link>
+            )}
           </div>
         </div>
     </AdminLayout>

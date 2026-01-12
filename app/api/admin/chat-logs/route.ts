@@ -36,8 +36,8 @@ export async function GET(req: NextRequest) {
       .eq("id", user.id)
       .single()
 
-    if (profile?.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (profile?.role !== "SUPERADMIN") {
+      return NextResponse.json({ error: "Forbidden - Superadmin access required" }, { status: 403 })
     }
 
     // Get query parameters

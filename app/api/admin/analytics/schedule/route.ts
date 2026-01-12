@@ -1,6 +1,7 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { requireSuperAdmin } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,6 +36,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireSuperAdmin()
+  if (!auth.ok) return NextResponse.json({ error: auth.message }, { status: auth.status })
   try {
     const supabase = await getSupabaseServiceRole()
     const body = await request.json()
@@ -69,6 +72,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await requireSuperAdmin()
+  if (!auth.ok) return NextResponse.json({ error: auth.message }, { status: auth.status })
   try {
     const supabase = await getSupabaseServiceRole()
     const { searchParams } = new URL(request.url)

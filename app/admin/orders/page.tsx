@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { AdminLayout } from "@/components/admin/admin-layout"
+import { SuperAdminGuard } from "@/components/admin/superadmin-guard"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,16 +22,10 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState("ALL")
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        router.push("/auth/signin?redirect=/admin/orders")
-      } else if (user.role !== "ADMIN" && user.role !== "SUPERADMIN" && user.role !== "SUPPORT") {
-        router.push("/profile")
-      } else {
-        fetchOrders()
-      }
+    if (!isLoading && user) {
+      fetchOrders()
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading])
 
   useEffect(() => {
     filterOrders()
@@ -98,6 +93,7 @@ export default function AdminOrders() {
   const statuses = ["ALL", "PENDING", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"]
 
   return (
+    <SuperAdminGuard>
     <AdminLayout>
       <div className="container-custom max-w-7xl">
           {/* Page Header */}
@@ -204,5 +200,6 @@ export default function AdminOrders() {
           </Card>
         </div>
     </AdminLayout>
+    </SuperAdminGuard>
   )
 }

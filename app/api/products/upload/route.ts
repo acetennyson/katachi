@@ -1,9 +1,17 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { type NextRequest, NextResponse } from "next/server"
 import settings from "@/lib/constants/settings"
+import { requireAdmin } from "@/lib/auth"
+import { logAdminActivity, extractRequestMetadata } from "@/lib/admin-activity"
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const auth = await requireAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const body = await request.json()
     const supabase = await getSupabaseServiceRole()
 
@@ -31,6 +39,8 @@ export async function POST(request: NextRequest) {
         specifications: body.specifications || [],
         attributes: body.attributes || {},
         media: body.media || {},
+        created_by: auth.user.id, // Track who created this product
+        updated_by: auth.user.id,
       })
       .select()
       .single()
@@ -39,6 +49,17 @@ export async function POST(request: NextRequest) {
       console.error("[Products Upload API] Error:", error)
       throw error
     }
+
+    // Log activity
+    const metadata = extractRequestMetadata(request.headers)
+    await logAdminActivity({
+      adminId: auth.user.id,
+      action: "product_created",
+      resourceType: "product",
+      resourceId: product.id.toString(),
+      details: { productName: body.name, productSlug: body.slug },
+      ...metadata,
+    })
 
     return NextResponse.json({
       success: true,

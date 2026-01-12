@@ -1,8 +1,11 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { requireSuperAdmin } from "@/lib/auth"
 
 export async function GET() {
   try {
+    const auth = await requireSuperAdmin()
+    if (!auth.ok) return NextResponse.json({ error: auth.message }, { status: auth.status })
     const supabase = await getSupabaseServiceRole()
     
     // Get events from last 5 minutes for real-time data

@@ -17,7 +17,7 @@ export function RecentOrders() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch("/api/admin/orders")
+      const response = await fetch("/api/admin/orders", { cache: 'no-store' })
       const data = await response.json()
       setOrders(data.orders?.slice(0, 5) || [])
     } catch (error) {

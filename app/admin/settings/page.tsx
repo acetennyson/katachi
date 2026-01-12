@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
+import { SuperAdminGuard } from "@/components/admin/superadmin-guard"
 import { AdminLayout } from "@/components/admin/admin-layout"
 import { BreadcrumbNav } from "@/components/admin/breadcrumb-nav"
 import { Card } from "@/components/ui/card"
@@ -16,7 +16,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, isLoading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   
@@ -70,12 +69,6 @@ export default function SettingsPage() {
   const [originalAtlassian, setOriginalAtlassian] = useState(atlassian)
   const [originalAiProviders, setOriginalAiProviders] = useState(aiProviders)
   const [hasChanges, setHasChanges] = useState(false)
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth/signin")
-    }
-  }, [user, authLoading, router])
 
   useEffect(() => {
     fetchSettings()
@@ -235,10 +228,26 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/admin/atlassian/test", { method: "POST" })
       const data = await res.json()
-      if (data.success) toast.success("Atlassian connection successful")
-      else toast.error(data.error || "Atlassian connection failed")
+      
+      if (data.success) {
+        toast.success("✅ Atlassian connection successful!", {
+          description: "Both Jira and Confluence APIs are working correctly.",
+          duration: 5000,
+        })
+      } else {
+        // Show detailed error for each service
+        const jiraStatus = data.results?.jira?.ok ? "✅ Jira OK" : `❌ Jira: ${data.results?.jira?.status || "Failed"}`
+        const confluenceStatus = data.results?.confluence?.ok ? "✅ Confluence OK" : `❌ Confluence: ${data.results?.confluence?.status || "Failed"}`
+        
+        toast.error("Atlassian connection failed", {
+          description: `${jiraStatus}\n${confluenceStatus}`,
+          duration: 7000,
+        })
+      }
     } catch (e) {
-      toast.error("Atlassian connection test failed")
+      toast.error("Atlassian connection test failed", {
+        description: "Network error or server issue. Check console for details.",
+      })
     } finally {
       setTestingAtlassian(false)
     }
@@ -265,17 +274,8 @@ export default function SettingsPage() {
     }
   }
 
-  if (authLoading || loading) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-neutral-600">Loading...</div>
-        </div>
-      </AdminLayout>
-    )
-  }
-
   return (
+    <SuperAdminGuard>
     <AdminLayout>
       <div className="p-6">
         <BreadcrumbNav
@@ -664,5 +664,6 @@ export default function SettingsPage() {
         </form>
       </div>
     </AdminLayout>
+    </SuperAdminGuard>
   )
 }

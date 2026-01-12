@@ -1,4 +1,4 @@
-import { getSupabaseServiceRole } from "@/lib/supabase"
+import { getSupabaseServiceRole, getSupabaseServer } from "@/lib/supabase"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(
@@ -6,7 +6,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = request.headers.get("x-user-id")
+    // Try to get user from header (old way) or from session (new way)
+    const userIdFromHeader = request.headers.get("x-user-id")
+    
+    // Get current authenticated user
+    const supabase = await getSupabaseServer()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    const userId = user?.id || userIdFromHeader
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -15,10 +24,17 @@ export async function GET(
     // Await params in Next.js 16
     const { id } = await params
 
-    const supabase = await getSupabaseServiceRole()
+    const supabaseService = await getSupabaseServiceRole()
+
+    // Get user profile to check role
+    const { data: profile } = await supabaseService
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single()
 
     // Fetch order with all details and items
-    const { data: order, error } = await supabase
+    const { data: order, error } = await supabaseService
       .from("orders")
       .select(`
         id,
@@ -29,7 +45,12 @@ export async function GET(
         tax,
         total,
         shipping_address,
+        tracking_number,
+        carrier,
+        estimated_delivery,
         created_at,
+        updated_at,
+        user_id,
         order_items (
           id,
           product_id,
@@ -39,7 +60,6 @@ export async function GET(
         )
       `)
       .eq("id", id)
-      .eq("user_id", userId)
       .single()
 
     if (error) {
@@ -51,6 +71,17 @@ export async function GET(
       }
       console.error("[Order Detail API] Error fetching order:", error)
       throw error
+    }
+
+    // Check access: user owns order OR is SUPERADMIN/ADMIN
+    const isAdmin = profile?.role === "SUPERADMIN" || profile?.role === "ADMIN"
+    const isOwner = order.user_id === userId
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json(
+        { success: false, error: "You don't have permission to view this order" },
+        { status: 403 }
+      )
     }
 
     // Calculate total_price for each order item and parse shipping_address

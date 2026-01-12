@@ -1,12 +1,21 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/auth"
 
 export async function GET() {
   try {
-    const supabase = await getSupabaseServiceRole()
+    // Check authentication
+    const auth = await requireAdmin()
+    if (!auth.ok) {
+      console.warn('[API /admin/products] Auth failed:', auth)
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
 
-    // Fetch all products
-    const { data: products, error } = await supabase
+    const supabase = await getSupabaseServiceRole()
+    const isSuperAdmin = auth.user.role === "SUPERADMIN"
+
+    // Build query based on role
+    let query = supabase
       .from("products")
       .select(`
         id,
@@ -23,9 +32,19 @@ export async function GET() {
         attributes,
         media,
         created_at,
-        updated_at
+        updated_at,
+        created_by,
+        updated_by
       `)
       .order("created_at", { ascending: false })
+
+    // ADMIN role: only see their own products
+    // SUPERADMIN: see all products
+    if (!isSuperAdmin) {
+      query = query.eq("created_by", auth.user.id)
+    }
+
+    const { data: products, error } = await query
 
     if (error) {
       console.error("[Admin Products API] Error:", error)
@@ -34,7 +53,8 @@ export async function GET() {
 
     return NextResponse.json({ 
       success: true, 
-      products: products || [] 
+      products: products || [],
+      userRole: auth.user.role
     })
   } catch (error: any) {
     console.error("[Admin Products API] Failed:", error)

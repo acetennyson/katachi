@@ -1,22 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSupabaseServer, getSupabaseServiceRole } from "@/lib/supabase"
+import { getSupabaseServiceRole } from "@/lib/supabase"
+import { requireAdmin } from "@/lib/auth"
 import { chatWithFallback } from "@/lib/ai-providers"
-
-async function requireAdmin() {
-  const supabase = await getSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { ok: false, status: 401 as const, message: "Unauthorized" }
-
-  const sr = await getSupabaseServiceRole()
-  const { data: profile } = await sr.from("profiles").select("role").eq("id", user.id).single()
-
-  if (profile?.role !== "ADMIN") return { ok: false, status: 403 as const, message: "Forbidden" }
-
-  return { ok: true as const }
-}
 
 /**
  * POST /api/admin/ai-providers/test

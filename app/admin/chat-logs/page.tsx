@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { AdminLayout } from "@/components/admin/admin-layout"
+import { SuperAdminGuard } from "@/components/admin/superadmin-guard"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, MessageCircle, Bot, AlertCircle, TrendingUp } from "lucide-react"
 import { motion } from "framer-motion"
@@ -85,6 +86,7 @@ export default function ChatLogsPage() {
   }
 
   return (
+    <SuperAdminGuard>
     <AdminLayout>
       <div className="p-6">
         {/* Header */}
@@ -258,5 +260,6 @@ export default function ChatLogsPage() {
         )}
       </div>
     </AdminLayout>
+    </SuperAdminGuard>
   )
 }

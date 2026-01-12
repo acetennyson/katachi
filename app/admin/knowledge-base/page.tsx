@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { AdminLayout } from "@/components/admin/admin-layout"
+import { SuperAdminGuard } from "@/components/admin/superadmin-guard"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2, Search, RefreshCw } from "lucide-react"
 import { motion } from "framer-motion"
@@ -111,6 +112,7 @@ export default function KnowledgeBasePage() {
   }
 
   return (
+    <SuperAdminGuard>
     <AdminLayout>
       <div className="p-6">
         {/* Header */}
@@ -322,5 +324,6 @@ export default function KnowledgeBasePage() {
         )}
       </div>
     </AdminLayout>
+    </SuperAdminGuard>
   )
 }

@@ -20,8 +20,9 @@ export default function AdminCategories() {
     if (!isLoading) {
       if (!user) {
         router.push("/auth/signin?redirect=/admin/categories")
-      } else if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-        router.push("/profile")
+      } else if (user.role !== "SUPERADMIN") {
+        // Only SUPERADMIN can manage categories
+        router.push("/admin")
       } else {
         fetchCategories()
       }
@@ -51,7 +52,7 @@ export default function AdminCategories() {
     )
   }
 
-  if (!user || (user.role !== "ADMIN" && user.role !== "SUPERADMIN")) {
+  if (!user || user.role !== "SUPERADMIN") {
     return null
   }
 

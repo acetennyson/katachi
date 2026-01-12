@@ -61,6 +61,11 @@ export async function PATCH(
 
     if (body.status) updateData.status = body.status
     if (body.payment_status) updateData.payment_status = body.payment_status
+    
+    // Tracking information updates
+    if (body.hasOwnProperty('tracking_number')) updateData.tracking_number = body.tracking_number
+    if (body.hasOwnProperty('carrier')) updateData.carrier = body.carrier
+    if (body.hasOwnProperty('estimated_delivery')) updateData.estimated_delivery = body.estimated_delivery
 
     const { data: order, error } = await supabase
       .from("orders")

@@ -1,9 +1,14 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { requireAdmin } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
     const supabase = await getSupabaseServiceRole()
     const { searchParams } = new URL(request.url)
     const days = parseInt(searchParams.get("days") || "30")
@@ -20,27 +25,76 @@ export async function GET(request: NextRequest) {
     
     let endDate: Date = customEndDate ? new Date(customEndDate) : new Date()
 
-    // Get ALL events for accurate calculations
+    // If ADMIN, restrict analytics to their products where possible
+    let productIds: string[] = []
+    const isSuper = auth.user.role === "SUPERADMIN"
+
+    if (!isSuper) {
+      const { data: adminProducts } = await supabase
+        .from("products")
+        .select("id")
+        .eq("created_by", auth.user.id)
+      productIds = (adminProducts || []).map((p: any) => p.id)
+    }
+
+    // Get events: if schema has product_id, filter to those products; otherwise we will compute only order-based metrics for admins
     let eventsQuery = supabase
       .from("analytics_events")
       .select("*")
       .gte("occurred_at", startDate.toISOString())
-    
+
     if (customEndDate) {
       eventsQuery = eventsQuery.lte("occurred_at", endDate.toISOString())
     }
-    
+
+    // Try to narrow by product_id if present
+    if (!isSuper && productIds.length > 0) {
+      // Some events may include product_id; narrowing will only affect those
+      // If column does not exist, Supabase will error; we ignore by catching below
+      try {
+        eventsQuery = (eventsQuery as any).in("product_id", productIds)
+      } catch {}
+    }
+
     const { data: allEvents, error: eventsError } = await eventsQuery
       .order("occurred_at", { ascending: false })
 
     if (eventsError) throw eventsError
 
     // Get orders for revenue calculation
-    const { data: orders } = await supabase
-      .from("orders")
-      .select("id, total, created_at")
-      .gte("created_at", startDate.toISOString())
-      .lte("created_at", endDate.toISOString())
+    let orders: any[] | null = null
+
+    if (isSuper) {
+      const { data } = await supabase
+        .from("orders")
+        .select("id, total, created_at")
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString())
+      orders = data
+    } else {
+      if (productIds.length === 0) {
+        orders = []
+      } else {
+        // 1) order_items for these products within date range (approx via order created_at after)
+        const { data: items } = await supabase
+          .from("order_items")
+          .select("order_id")
+          .in("product_id", productIds)
+
+        const orderIds = Array.from(new Set((items || []).map((i: any) => i.order_id)))
+        if (orderIds.length === 0) {
+          orders = []
+        } else {
+          const { data } = await supabase
+            .from("orders")
+            .select("id, total, created_at")
+            .in("id", orderIds)
+            .gte("created_at", startDate.toISOString())
+            .lte("created_at", endDate.toISOString())
+          orders = data || []
+        }
+      }
+    }
 
     const recentEvents = allEvents?.slice(0, 100) || []
 

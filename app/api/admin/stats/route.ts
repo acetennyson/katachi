@@ -1,8 +1,15 @@
 import { getSupabaseServiceRole } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { requireSuperAdmin } from "@/lib/auth"
 
 export async function GET() {
   try {
+    // SUPERADMIN only - system-wide statistics
+    const auth = await requireSuperAdmin()
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.message }, { status: auth.status })
+    }
+
     const supabase = await getSupabaseServiceRole()
 
     // Get today's date and 30 days ago for comparison

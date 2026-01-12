@@ -15,7 +15,7 @@ export function RevenueChart() {
   const fetchRevenueData = async () => {
     try {
       // Fetch orders and aggregate by date
-      const response = await fetch("/api/admin/orders")
+      const response = await fetch("/api/admin/orders", { cache: 'no-store' })
       const ordersData = await response.json()
 
       // Group orders by date and calculate revenue

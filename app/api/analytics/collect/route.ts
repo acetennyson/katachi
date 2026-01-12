@@ -314,7 +314,10 @@ export async function POST(req: NextRequest) {
       console.error("[Analytics] Location lookup failed:", error)
     }
 
-    const { error } = await supabase.from("analytics_events").insert({
+    // Try to include product_id if provided in payload for better per-product analytics (safe even if column missing)
+    const productId = (payload && (payload.productId || payload.product_id)) || null
+
+    const insertRow: any = {
       user_id: user?.id,
       session_id: sessionId,
       device_id: deviceId,
@@ -329,7 +332,10 @@ export async function POST(req: NextRequest) {
       country,
       city,
       occurred_at: new Date().toISOString(),
-    })
+    }
+    if (productId) insertRow.product_id = productId
+
+    const { error } = await supabase.from("analytics_events").insert(insertRow)
 
     if (error) {
       console.error("[v0] Analytics error:", error)

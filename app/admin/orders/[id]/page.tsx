@@ -4,14 +4,18 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { AdminLayout } from "@/components/admin/admin-layout"
+import { SuperAdminGuard } from "@/components/admin/superadmin-guard"
 import { BreadcrumbNav } from "@/components/admin/breadcrumb-nav"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
-import { Package, CreditCard, MapPin, User, Calendar, Edit } from "lucide-react"
+import { Package, CreditCard, MapPin, User, Calendar, Edit, Truck } from "lucide-react"
 import { toast } from "sonner"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { LiveTrackingManager } from "@/components/admin/live-tracking-manager"
 
 export default function AdminOrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const { user, isLoading } = useAuth()
@@ -20,6 +24,9 @@ export default function AdminOrderDetail({ params }: { params: Promise<{ id: str
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [trackingNumber, setTrackingNumber] = useState("")
+  const [carrier, setCarrier] = useState("")
+  const [estimatedDelivery, setEstimatedDelivery] = useState("")
 
   useEffect(() => {
     params.then(p => setOrderId(p.id))
@@ -44,6 +51,11 @@ export default function AdminOrderDetail({ params }: { params: Promise<{ id: str
       
       if (data.success && data.order) {
         setOrder(data.order)
+        // Load tracking info if available
+        setTrackingNumber(data.order.tracking_number || "")
+        setCarrier(data.order.carrier || "")
+        setEstimatedDelivery(data.order.estimated_delivery ? 
+          new Date(data.order.estimated_delivery).toISOString().slice(0, 16) : "")
       } else {
         toast.error("Order not found")
         router.push("/admin/orders")
@@ -106,6 +118,42 @@ export default function AdminOrderDetail({ params }: { params: Promise<{ id: str
     }
   }
 
+  const updateTrackingInfo = async () => {
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          tracking_number: trackingNumber || null,
+          carrier: carrier || null,
+          estimated_delivery: estimatedDelivery ? new Date(estimatedDelivery).toISOString() : null,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success("Tracking information updated!", {
+          description: "Customers can now track this order using the tracking page."
+        })
+        setOrder({ 
+          ...order, 
+          tracking_number: trackingNumber,
+          carrier: carrier,
+          estimated_delivery: estimatedDelivery
+        })
+      } else {
+        toast.error(data.error || "Failed to update tracking")
+      }
+    } catch (error) {
+      console.error("Failed to update tracking:", error)
+      toast.error("Failed to update tracking information")
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
       PENDING: "bg-yellow-100 text-yellow-800",
@@ -143,6 +191,7 @@ export default function AdminOrderDetail({ params }: { params: Promise<{ id: str
     : order.shipping_address || {}
 
   return (
+    <SuperAdminGuard>
     <AdminLayout>
       <div className="container-custom max-w-6xl">
           <BreadcrumbNav items={[
@@ -254,6 +303,82 @@ export default function AdminOrderDetail({ params }: { params: Promise<{ id: str
             </Card>
           </div>
 
+          {/* Tracking Information */}
+          <Card className="p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Truck className="h-5 w-5 text-neutral-600" />
+              <h2 className="text-lg font-bold text-neutral-900">Tracking Information</h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="trackingNumber">Tracking Number</Label>
+                <Input
+                  id="trackingNumber"
+                  type="text"
+                  placeholder="e.g., 1Z999AA10123456784"
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  disabled={updating}
+                />
+              </div>
+              <div>
+                <Label htmlFor="carrier">Carrier</Label>
+                <Select
+                  value={carrier}
+                  onValueChange={setCarrier}
+                  disabled={updating}
+                >
+                  <SelectTrigger id="carrier">
+                    <SelectValue placeholder="Select carrier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USPS">USPS</SelectItem>
+                    <SelectItem value="FedEx">FedEx</SelectItem>
+                    <SelectItem value="UPS">UPS</SelectItem>
+                    <SelectItem value="DHL">DHL</SelectItem>
+                    <SelectItem value="bpost">bpost (Belgium)</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="estimatedDelivery">Estimated Delivery</Label>
+                <Input
+                  id="estimatedDelivery"
+                  type="datetime-local"
+                  value={estimatedDelivery}
+                  onChange={(e) => setEstimatedDelivery(e.target.value)}
+                  disabled={updating}
+                />
+              </div>
+              <Button 
+                onClick={updateTrackingInfo} 
+                disabled={updating}
+                className="w-full"
+              >
+                {updating ? "Updating..." : "Update Tracking Info"}
+              </Button>
+              {order.tracking_number && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-900">
+                    <strong>Public Tracking Link:</strong>
+                  </p>
+                  <a 
+                    href={`/track/${order.order_number}?email=${order.shipping_email}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline break-all"
+                  >
+                    {typeof window !== 'undefined' && window.location.origin}/track/{order.order_number}
+                  </a>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Live Tracking Manager */}
+          <LiveTrackingManager orderId={orderId} orderNumber={order.order_number} />
+
           {/* Order Items */}
           <Card className="p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
@@ -319,5 +444,6 @@ export default function AdminOrderDetail({ params }: { params: Promise<{ id: str
           </Card>
         </div>
     </AdminLayout>
+    </SuperAdminGuard>
   )
 }
