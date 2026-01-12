@@ -46,14 +46,14 @@ export async function GET(request: NextRequest) {
 
         // Handle password recovery
         if (type === "recovery") {
-          return NextResponse.redirect(new URL("/auth/reset-password?verified=true", requestUrl.origin))
+          return NextResponse.redirect(new URL("/auth/reset-password?verified=true&from_auth=true", requestUrl.origin))
         }
 
-        // Redirect based on role
+        // Redirect based on role with auth flag for loading screen
         if (profile?.role === "ADMIN" || profile?.role === "SUPERADMIN") {
-          return NextResponse.redirect(new URL("/admin", requestUrl.origin))
+          return NextResponse.redirect(new URL("/admin?from_auth=true", requestUrl.origin))
         } else {
-          return NextResponse.redirect(new URL(next, requestUrl.origin))
+          return NextResponse.redirect(new URL(`${next}?from_auth=true`, requestUrl.origin))
         }
       }
     } catch (error) {
@@ -91,14 +91,14 @@ export async function GET(request: NextRequest) {
 
         // Handle password recovery
         if (type === "recovery") {
-          return NextResponse.redirect(new URL("/auth/reset-password?verified=true", requestUrl.origin))
+          return NextResponse.redirect(new URL("/auth/reset-password?verified=true&from_auth=true", requestUrl.origin))
         }
 
-        // Redirect based on role
+        // Redirect based on role with auth flag for loading screen
         if (profile?.role === "ADMIN" || profile?.role === "SUPERADMIN") {
-          return NextResponse.redirect(new URL("/admin", requestUrl.origin))
+          return NextResponse.redirect(new URL("/admin?from_auth=true", requestUrl.origin))
         } else {
-          return NextResponse.redirect(new URL(next, requestUrl.origin))
+          return NextResponse.redirect(new URL(`${next}?from_auth=true`, requestUrl.origin))
         }
       }
     } catch (error) {

@@ -7,6 +7,8 @@ import { AuthProvider } from "@/lib/auth-context"
 import { AnalyticsProvider } from "@/components/analytics-provider"
 import { AIChat } from "@/components/ai-chat"
 import { AuthCallbackHandler } from "@/components/auth-callback-handler"
+import { AuthLoadingScreen } from "@/components/auth-loading-screen"
+import { Suspense } from "react"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -66,6 +68,9 @@ export default function RootLayout({
         <AuthProvider>
           <CartProvider>
             <AnalyticsProvider>
+              <Suspense fallback={null}>
+                <AuthLoadingScreen />
+              </Suspense>
               <AuthCallbackHandler />
               {children}
               <AIChat />

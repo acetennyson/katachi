@@ -42,6 +42,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // Check if we're coming from auth callback (session might be fresh)
+      const urlParams = new URLSearchParams(window.location.search)
+      const fromAuth = urlParams.get("from_auth") === "true" || 
+                       window.sessionStorage.getItem("auth_in_progress") === "true"
+
       // If no user in localStorage, check if there's an active Supabase session
       try {
         const { getSupabaseBrowser } = await import("@/lib/supabase-client")
@@ -70,6 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem("user", JSON.stringify(userObj))
             setUser(userObj)
             console.log("[AuthContext] User authenticated from Supabase session")
+            
+            // Clear auth in progress flag
+            window.sessionStorage.removeItem("auth_in_progress")
           }
         }
       } catch (error) {
