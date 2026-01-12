@@ -16,6 +16,9 @@ interface AuthContextType {
   isLoading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, name: string) => Promise<void>
+  signInWithMagicLink: (email: string) => Promise<void>
+  resetPassword: (email: string) => Promise<void>
+  updatePassword: (password: string) => Promise<void>
   signOut: () => void
 }
 
@@ -35,6 +38,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setIsLoading(false)
+
+    // Listen for storage events (for cross-tab auth and callback handler)
+    const handleStorageChange = () => {
+      const updatedUser = localStorage.getItem("user")
+      if (updatedUser) {
+        try {
+          setUser(JSON.parse(updatedUser))
+        } catch (e) {
+          console.error("Failed to load updated user:", e)
+        }
+      } else {
+        setUser(null)
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
   }, [])
 
   const signIn = async (email: string, password: string) => {
@@ -94,13 +114,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const signInWithMagicLink = async (email: string) => {
+    try {
+      const response = await fetch("/api/auth/magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to send magic link")
+      }
+
+      return await response.json()
+    } catch (err) {
+      console.error("[v0] Magic link error:", err)
+      throw err
+    }
+  }
+
+  const resetPassword = async (email: string) => {
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to send password reset email")
+      }
+
+      return await response.json()
+    } catch (err) {
+      console.error("[v0] Password reset error:", err)
+      throw err
+    }
+  }
+
+  const updatePassword = async (password: string) => {
+    try {
+      const response = await fetch("/api/auth/update-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to update password")
+      }
+
+      return await response.json()
+    } catch (err) {
+      console.error("[v0] Password update error:", err)
+      throw err
+    }
+  }
+
   const signOut = () => {
     trackSignOut()
     localStorage.removeItem("user")
     setUser(null)
   }
 
-  return <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{ user, isLoading, signIn, signUp, signInWithMagicLink, resetPassword, updatePassword, signOut }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
