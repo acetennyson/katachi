@@ -11,9 +11,17 @@ import { ChevronLeft } from "lucide-react"
 
 export default function AccountPage() {
   const router = useRouter()
-  const { user, isLoading, signOut } = useAuth()
+  const { user, isLoading, signOut, updatePassword } = useAuth()
   const [formData, setFormData] = useState({ name: "", email: "" })
   const [isSaving, setIsSaving] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  })
+  const [passwordError, setPasswordError] = useState("")
+  const [passwordSuccess, setPasswordSuccess] = useState("")
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -31,6 +39,39 @@ export default function AccountPage() {
     await new Promise((resolve) => setTimeout(resolve, 1000))
     setIsSaving(false)
     console.log("[v0] Profile saved:", formData)
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPasswordError("")
+    setPasswordSuccess("")
+
+    // Validation
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters")
+      return
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError("Passwords do not match")
+      return
+    }
+
+    setIsChangingPassword(true)
+
+    try {
+      await updatePassword(passwordData.newPassword)
+      setPasswordSuccess("Password updated successfully!")
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      })
+    } catch (error) {
+      setPasswordError("Failed to update password. Please try again.")
+    } finally {
+      setIsChangingPassword(false)
+    }
   }
 
   if (isLoading || !user) {
@@ -90,6 +131,61 @@ export default function AccountPage() {
                 </Button>
               </div>
             </div>
+          </motion.div>
+        </Reveal>
+
+        <Reveal delay={0.2}>
+          <motion.div className="mt-8 p-8 bg-neutral-50 rounded-lg" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <h2 className="text-2xl font-bold mb-6 text-neutral-900">Change Password</h2>
+            
+            <form onSubmit={handleChangePassword} className="space-y-6">
+              {passwordError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                  {passwordError}
+                </div>
+              )}
+
+              {passwordSuccess && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
+                  {passwordSuccess}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-neutral-900 mb-2">New Password</label>
+                <input
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-900"
+                  placeholder="Enter new password"
+                />
+                <p className="text-sm text-neutral-500 mt-1">Must be at least 6 characters</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-neutral-900 mb-2">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-900"
+                  placeholder="Confirm new password"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isChangingPassword}
+                className="bg-neutral-900 text-white hover:bg-neutral-800"
+              >
+                {isChangingPassword ? "Updating..." : "Update Password"}
+              </Button>
+            </form>
           </motion.div>
         </Reveal>
       </div>
