@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "@/lib/supabase-client"
 import { useAuth } from "@/lib/auth-context"
@@ -14,9 +14,21 @@ export function AuthCallbackHandler() {
   const router = useRouter()
   const { signIn } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
+  const hasProcessed = useRef(false)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      // Prevent double processing
+      if (hasProcessed.current) {
+        console.log("[AuthCallbackHandler] Already processed, skipping")
+        return
+      }
+
+      // Debug logging
+      console.log("[AuthCallbackHandler] Running, URL:", window.location.href)
+      console.log("[AuthCallbackHandler] Hash:", window.location.hash)
+      console.log("[AuthCallbackHandler] Search:", window.location.search)
+      
       // Check if there's a hash in the URL (Supabase returns tokens in hash)
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
       const accessToken = hashParams.get("access_token")
@@ -33,9 +45,14 @@ export function AuthCallbackHandler() {
       const refresh = refreshToken || refreshTokenQuery
       const authType = type || typeQuery
 
-      if (token && !isProcessing) {
+      console.log("[AuthCallbackHandler] Token found:", !!token)
+      console.log("[AuthCallbackHandler] Auth type:", authType)
+      console.log("[AuthCallbackHandler] Has processed:", hasProcessed.current)
+
+      if (token && !hasProcessed.current) {
+        hasProcessed.current = true
         setIsProcessing(true)
-        console.log("Auth callback detected:", { type: authType })
+        console.log("[AuthCallbackHandler] Starting auth process:", { type: authType })
 
         try {
           const supabase = getSupabaseBrowser()
@@ -109,7 +126,7 @@ export function AuthCallbackHandler() {
     }
 
     handleAuthCallback()
-  }, [router, isProcessing])
+  }, [router])
 
   // Show nothing - this is just a handler
   if (isProcessing) {
