@@ -53,6 +53,11 @@ export function AdminHeader() {
     { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
     { href: "/admin/messaging", label: "Messages", icon: MessageSquare },
   ]
+  
+  // Add Users link for SUPERADMIN only
+  if (user?.role === "SUPERADMIN") {
+    navItems.push({ href: "/admin/users", label: "Users", icon: User })
+  }
 
   const isActive = (href: string) => {
     if (href === "/admin") {
