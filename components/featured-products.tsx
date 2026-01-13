@@ -46,7 +46,7 @@ const featuredProducts = [
     dimensions: "W: 95cm × D: 85cm × H: 80cm",
   },
   {
-    id: "7e0be5fe-7db8-48dd-8e21-9ca3177a4dbf",
+    id: "114a2756-91ec-46d3-947f-6533dbf04e7a",
     name: "Sage Copper Lounge",
     price: "€4,675",
     image: "/sage-copper-lounge-chair.png",
