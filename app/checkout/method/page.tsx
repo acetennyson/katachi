@@ -39,14 +39,14 @@ const allPaymentMethods = [
     processingTime: "Instant",
     enabled: !!process.env.NEXT_PUBLIC_LEMONSQUEEZY_ENABLED,
   },
-  {
+  /* {
     id: "razorpay",
     name: "Cards & UPI",
     description: "Pay with cards, UPI, wallets via Razorpay",
     icon: CreditCard,
     processingTime: "Instant",
     enabled: !!process.env.NEXT_PUBLIC_RAZORPAY_ENABLED,
-  },
+  }, */
   {
     id: "crypto",
     name: "Crypto",
