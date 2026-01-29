@@ -32,6 +32,30 @@ const allPaymentMethods = [
     enabled: true, // Always available (Stripe or manual based on settings.payment.card)
   },
   {
+    id: "lemonsqueezy",
+    name: "Cards & Digital Wallets",
+    description: "Pay with cards, Apple Pay, Google Pay (No KYC, handles all taxes)",
+    icon: CreditCard,
+    processingTime: "Instant",
+    enabled: !!process.env.NEXT_PUBLIC_LEMONSQUEEZY_ENABLED,
+  },
+  {
+    id: "razorpay",
+    name: "Cards & UPI",
+    description: "Pay with cards, UPI, wallets via Razorpay",
+    icon: CreditCard,
+    processingTime: "Instant",
+    enabled: !!process.env.NEXT_PUBLIC_RAZORPAY_ENABLED,
+  },
+  {
+    id: "crypto",
+    name: "Crypto",
+    description: "Pay with cryptocurrency via NOWPayments",
+    icon: CreditCard,
+    processingTime: "Instant",
+    enabled: !!process.env.NEXT_PUBLIC_NOWPAYMENTS_ENABLED,
+  },
+  {
     id: "paypal",
     name: "PayPal",
     description: "Fast and secure payment with PayPal",

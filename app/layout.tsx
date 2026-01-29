@@ -77,6 +77,8 @@ export default function RootLayout({
             </AnalyticsProvider>
           </CartProvider>
         </AuthProvider>
+        {/* Razorpay Checkout Script */}
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
       </body>
     </html>
   )

@@ -6,9 +6,10 @@ interface PaymentIntent {
   amount: number
   currency: string
   status: "pending" | "succeeded" | "failed"
-  provider: "stripe" | "paypal" | "flutterwave"
+  provider: "stripe" | "paypal" | "flutterwave" | "nowpayments"
   clientSecret?: string // For Stripe
   approvalUrl?: string // For PayPal
+  invoiceUrl?: string // For NOWPayments
 }
 
 // Initialize Stripe if key is available
@@ -22,7 +23,7 @@ export async function createPaymentIntent(
   userId: string,
   amount: number,
   currency = "EUR",
-  provider: "stripe" | "paypal" | "flutterwave" = "stripe",
+  provider: "stripe" | "paypal" | "flutterwave" | "nowpayments" = "stripe",
 ): Promise<PaymentIntent> {
   // Provider-specific implementations
   switch (provider) {
@@ -32,6 +33,8 @@ export async function createPaymentIntent(
       return createPayPalIntent(userId, amount, currency)
     case "flutterwave":
       return createFlutterwaveIntent(userId, amount, currency)
+    case "nowpayments":
+      return createNOWPaymentsIntent(userId, amount, currency)
     default:
       throw new Error("Unsupported payment provider")
   }
@@ -57,9 +60,8 @@ async function createStripeIntent(userId: string, amount: number, currency: stri
       metadata: {
         userId,
       },
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      // Explicitly specify payment method types instead of automatic
+      payment_method_types: ['card'],
     })
 
     return {
@@ -70,9 +72,16 @@ async function createStripeIntent(userId: string, amount: number, currency: stri
       provider: "stripe",
       clientSecret: paymentIntent.client_secret || undefined,
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Stripe payment intent creation failed:", error)
-    throw new Error("Failed to create Stripe payment intent")
+    console.error("Error details:", {
+      message: error?.message,
+      type: error?.type,
+      code: error?.code,
+      raw: error?.raw,
+      statusCode: error?.statusCode,
+    })
+    throw new Error(`Failed to create Stripe payment intent: ${error?.message || error}`)
   }
 }
 
@@ -97,6 +106,18 @@ async function createFlutterwaveIntent(userId: string, amount: number, currency:
     currency,
     status: "pending",
     provider: "flutterwave",
+  }
+}
+
+async function createNOWPaymentsIntent(userId: string, amount: number, currency: string): Promise<PaymentIntent> {
+  // NOWPayments is handled via direct API calls in the route handler
+  // This is a placeholder for consistency
+  return {
+    id: `now_${Date.now()}`,
+    amount,
+    currency,
+    status: "pending",
+    provider: "nowpayments",
   }
 }
 

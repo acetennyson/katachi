@@ -14,7 +14,7 @@ const settings = {
     active: true, // if false, the website will be disabled
     
     payment: {
-        card: true, // stripe if true, other secured method/api if false
+        card: false, // stripe if true, other secured method/api if false
         paypal: true, // if false, the paypal payment will be disabled
         bank_transfer: false, // if false, the bank transfer payment will be disabled
     },

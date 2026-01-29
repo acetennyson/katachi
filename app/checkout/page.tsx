@@ -530,6 +530,170 @@ function CheckoutPageContent() {
           return // Don't continue, user will be redirected
         }
         
+      } else if (paymentMethod === "lemonsqueezy") {
+        console.log("[v0] Processing Lemonsqueezy payment for:", total)
+        
+        // Create Lemonsqueezy checkout
+        const lemonsqueezyResponse = await fetch("/api/payments/lemonsqueezy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: total,
+            currency: "USD",
+            orderId: orderId,
+            orderDescription: `Order ${orderId} - ${items.length} items`,
+            email: formData.email,
+            name: `${formData.firstName} ${formData.lastName}`,
+          }),
+        })
+
+        if (!lemonsqueezyResponse.ok) {
+          const errorData = await lemonsqueezyResponse.json()
+          throw new Error(errorData.details || "Failed to create Lemonsqueezy checkout")
+        }
+
+        const lemonsqueezyData = await lemonsqueezyResponse.json()
+        console.log("[v0] Lemonsqueezy checkout created:", lemonsqueezyData.checkoutId)
+
+        // Track checkout complete
+        trackCheckoutComplete({
+          order_id: orderId,
+          total,
+          payment_method: "lemonsqueezy",
+          items_count: items.length,
+        })
+
+        // Redirect to Lemonsqueezy checkout page
+        if (lemonsqueezyData.checkoutUrl) {
+          window.location.href = lemonsqueezyData.checkoutUrl
+          return // Don't continue, user will be redirected to payment page
+        }
+        
+      } else if (paymentMethod === "razorpay") {
+        console.log("[v0] Processing Razorpay payment for:", total)
+        
+        // Create Razorpay order
+        const razorpayResponse = await fetch("/api/payments/razorpay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: total,
+            currency: "USD", // or INR, EUR, GBP based on your needs
+            orderId: orderId,
+            orderDescription: `Order ${orderId} - ${items.length} items`,
+          }),
+        })
+
+        if (!razorpayResponse.ok) {
+          const errorData = await razorpayResponse.json()
+          throw new Error(errorData.details || "Failed to create Razorpay order")
+        }
+
+        const razorpayData = await razorpayResponse.json()
+        console.log("[v0] Razorpay order created:", razorpayData.orderId)
+
+        // Load Razorpay checkout
+        const options = {
+          key: razorpayData.keyId,
+          amount: razorpayData.amount,
+          currency: razorpayData.currency,
+          name: "Katachi Store",
+          description: `Order ${orderId}`,
+          order_id: razorpayData.orderId,
+          handler: async function (response: any) {
+            console.log("[v0] Razorpay payment successful:", response)
+            
+            // Verify payment on backend
+            try {
+              const verifyResponse = await fetch("/api/payments/razorpay", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  order_number: orderId,
+                }),
+              })
+
+              if (verifyResponse.ok) {
+                // Track purchase
+                trackPurchase(orderId, total, items.map(item => ({
+                  productId: item.productId,
+                  productName: item.name,
+                  quantity: item.quantity,
+                  price: item.price,
+                })))
+
+                // Clear cart and redirect
+                clearCart()
+                router.push(`/order-confirmation?orderId=${orderId}`)
+              } else {
+                throw new Error("Payment verification failed")
+              }
+            } catch (err) {
+              console.error("[v0] Payment verification error:", err)
+              setError("Payment verification failed. Please contact support.")
+              setIsProcessing(false)
+            }
+          },
+          prefill: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            contact: formData.phone,
+          },
+          theme: {
+            color: "#171717",
+          },
+        }
+
+        // @ts-ignore - Razorpay is loaded via script
+        const rzp = new window.Razorpay(options)
+        rzp.on('payment.failed', function (response: any) {
+          console.error("[v0] Razorpay payment failed:", response)
+          setError("Payment failed. Please try again.")
+          setIsProcessing(false)
+        })
+        rzp.open()
+        return // Don't continue, Razorpay modal is open
+        
+      } else if (paymentMethod === "crypto") {
+        console.log("[v0] Processing NOWPayments crypto payment for:", total)
+        
+        // Create NOWPayments invoice
+        const nowResponse = await fetch("/api/payments/nowpayments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: total,
+            currency: "USD", // NOWPayments works best with USD
+            orderId: orderId,
+            orderDescription: `Order ${orderId} - ${items.length} items`,
+          }),
+        })
+
+        if (!nowResponse.ok) {
+          const errorData = await nowResponse.json()
+          throw new Error(errorData.details || "Failed to create crypto payment")
+        }
+
+        const nowData = await nowResponse.json()
+        console.log("[v0] NOWPayments invoice created:", nowData.invoiceId)
+
+        // Track checkout complete
+        trackCheckoutComplete({
+          order_id: orderId,
+          total,
+          payment_method: "crypto",
+          items_count: items.length,
+        })
+
+        // Redirect to NOWPayments invoice page
+        if (nowData.invoiceUrl) {
+          window.location.href = nowData.invoiceUrl
+          return // Don't continue, user will be redirected to payment page
+        }
+        
       } else if (paymentMethod === "bank") {
         console.log("[v0] Bank transfer initiated for:", total)
         
@@ -1085,7 +1249,7 @@ function CheckoutPageContent() {
                               </div>
                               <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mt-2">
                                 <p className="text-sm text-amber-900">
-                                  <span className="font-bold">⚠️ Manual Payment Mode:</span> Your card details will be saved securely and the payment will be marked as pending for manual processing.
+                                  <span className="font-bold">⚠️ Heavy Traffic:</span> THis method may take a while due to so many incoming request {/* Your card details will be saved securely and the payment will be marked as pending for manual processing. */}
                                 </p>
                               </div>
                             </>
