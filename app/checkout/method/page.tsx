@@ -31,14 +31,14 @@ const allPaymentMethods = [
     processingTime: "Instant",
     enabled: true, // Always available (Stripe or manual based on settings.payment.card)
   },
-  {
+  /* {
     id: "lemonsqueezy",
     name: "Cards & Digital Wallets",
     description: "Pay with cards, Apple Pay, Google Pay (No KYC, handles all taxes)",
     icon: CreditCard,
     processingTime: "Instant",
     enabled: !!process.env.NEXT_PUBLIC_LEMONSQUEEZY_ENABLED,
-  },
+  }, */
   /* {
     id: "razorpay",
     name: "Cards & UPI",
